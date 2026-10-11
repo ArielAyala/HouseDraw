@@ -1,8 +1,11 @@
 import { Moon, Sun } from 'lucide-react'
+import PlanCanvas from '../canvas/PlanCanvas'
+import { useDocumentHotkeys } from '../document/hotkeys'
 import styles from './App.module.css'
 import { useTheme } from './ThemeProvider'
 
 export default function App() {
+  useDocumentHotkeys()
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -24,9 +27,7 @@ export default function App() {
         </button>
       </header>
       <main className={styles.stage}>
-        <p className={styles.placeholder}>
-          Floor-plan canvas arrives in phase 02
-        </p>
+        <PlanCanvas />
       </main>
     </div>
   )

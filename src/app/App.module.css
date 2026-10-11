@@ -75,20 +75,7 @@
 
 .stage {
   flex: 1;
-  display: grid;
-  place-items: center;
-  background-image:
-    linear-gradient(var(--hd-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--hd-grid) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.placeholder {
-  margin: 0;
-  padding: 10px 14px;
-  color: var(--hd-text-muted);
-  font-size: 13px;
-  background: var(--hd-bg-elevated);
-  border: 1px solid var(--hd-border);
-  border-radius: var(--hd-radius);
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
 }
