@@ -1,0 +1,54 @@
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --hd-bg: #121212;
+  --hd-bg-elevated: #1c1c1c;
+  --hd-surface: #242424;
+  --hd-border: #3a3a3a;
+  --hd-text: #ececec;
+  --hd-text-muted: #9a9a9a;
+  --hd-accent: #8b93ff;
+  --hd-grid: rgba(255, 255, 255, 0.04);
+  --hd-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --hd-radius: 8px;
+  --hd-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --hd-bg: #f4f4f5;
+  --hd-bg-elevated: #ffffff;
+  --hd-surface: #ffffff;
+  --hd-border: #d4d4d8;
+  --hd-text: #18181b;
+  --hd-text-muted: #71717a;
+  --hd-accent: #4f46e5;
+  --hd-grid: rgba(0, 0, 0, 0.05);
+  --hd-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: var(--hd-sans);
+  color: var(--hd-text);
+  background: var(--hd-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}

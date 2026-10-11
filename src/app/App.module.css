@@ -1,0 +1,94 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--hd-bg);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--hd-border);
+  background: var(--hd-bg-elevated);
+  box-shadow: var(--hd-shadow);
+  z-index: 1;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mark {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--hd-text);
+  border-radius: 3px 3px 2px 2px;
+  position: relative;
+}
+
+.mark::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: -6px;
+  height: 8px;
+  border: 1.5px solid var(--hd-text);
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--hd-border);
+  border-radius: var(--hd-radius);
+  background: var(--hd-surface);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  border-color: var(--hd-accent);
+  color: var(--hd-accent);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: 2px;
+}
+
+.stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background-image:
+    linear-gradient(var(--hd-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hd-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.placeholder {
+  margin: 0;
+  padding: 10px 14px;
+  color: var(--hd-text-muted);
+  font-size: 13px;
+  background: var(--hd-bg-elevated);
+  border: 1px solid var(--hd-border);
+  border-radius: var(--hd-radius);
+}
