@@ -1,4 +1,5 @@
 import type { PlanDocument, PointMm } from '../document/types'
+import type { Marquee } from '../tools/select'
 import { type Camera, type Size, visibleWorld, worldToScreen } from './camera'
 import { gridLines, isMajorLine, planGrid } from './grid'
 import { formatDimensionMm } from './units'
@@ -13,11 +14,14 @@ export type CanvasColors = {
   wallDraft: string
   labelFill: string
   labelText: string
+  marqueeFill: string
+  marqueeStroke: string
 }
 
 export type PlanOverlay = {
-  selectedWallId: string | null
+  selectedWallIds: string[]
   draft: { a: PointMm; b: PointMm; thicknessMm: number } | null
+  marquee: Marquee | null
 }
 
 export function renderPlan(
@@ -26,7 +30,7 @@ export function renderPlan(
   size: Size,
   colors: CanvasColors,
   plan: PlanDocument,
-  overlay: PlanOverlay = { selectedWallId: null, draft: null },
+  overlay: PlanOverlay = { selectedWallIds: [], draft: null, marquee: null },
 ): void {
   ctx.save()
   ctx.clearRect(0, 0, size.width, size.height)
@@ -52,16 +56,18 @@ export function renderPlan(
   strokeGrid(ctx, camera, view, size, grid.majorMm, colors.major, 1, null)
   strokeOrigin(ctx, camera, size, colors.origin)
 
+  const selectedIds = new Set(overlay.selectedWallIds)
+  const selected = plan.walls.filter((wall) => selectedIds.has(wall.id))
+
   for (const wall of plan.walls) {
-    if (wall.id === overlay.selectedWallId) {
+    if (selectedIds.has(wall.id)) {
       continue
     }
     strokeWall(ctx, camera, wall, colors.wall)
   }
 
-  const selected = plan.walls.find((wall) => wall.id === overlay.selectedWallId)
-  if (selected) {
-    strokeWall(ctx, camera, selected, colors.wallSelected)
+  for (const wall of selected) {
+    strokeWall(ctx, camera, wall, colors.wallSelected)
   }
 
   if (overlay.draft && segmentLengthMm(overlay.draft.a, overlay.draft.b) >= 1) {
@@ -74,19 +80,19 @@ export function renderPlan(
       overlay.draft.thicknessMm,
       colors,
     )
-  } else if (selected) {
-    drawLengthLabel(
-      ctx,
-      camera,
-      selected.a,
-      selected.b,
-      selected.thicknessMm,
-      colors,
-    )
+  } else if (selected.length === 1) {
+    const wall = selected[0]
+    if (wall) {
+      drawLengthLabel(ctx, camera, wall.a, wall.b, wall.thicknessMm, colors)
+    }
   }
 
   if (overlay.draft) {
     drawDraftHandle(ctx, camera, overlay.draft.a, colors.wallDraft)
+  }
+
+  if (overlay.marquee) {
+    strokeMarquee(ctx, camera, overlay.marquee, colors)
   }
 
   ctx.restore()
@@ -168,6 +174,31 @@ function strokeWall(
   ctx.moveTo(a.x, a.y)
   ctx.lineTo(b.x, b.y)
   ctx.stroke()
+  ctx.restore()
+}
+
+function strokeMarquee(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  marquee: Marquee,
+  colors: CanvasColors,
+): void {
+  const a = worldToScreen(camera, marquee.start)
+  const b = worldToScreen(camera, marquee.end)
+  const x = Math.min(a.x, b.x)
+  const y = Math.min(a.y, b.y)
+  const w = Math.abs(b.x - a.x)
+  const h = Math.abs(b.y - a.y)
+  if (w < 1 && h < 1) {
+    return
+  }
+  ctx.save()
+  ctx.fillStyle = colors.marqueeFill
+  ctx.strokeStyle = colors.marqueeStroke
+  ctx.lineWidth = 1
+  ctx.setLineDash([4, 3])
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeRect(x + 0.5, y + 0.5, w, h)
   ctx.restore()
 }
 

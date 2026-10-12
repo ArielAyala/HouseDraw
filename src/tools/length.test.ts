@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseLengthInput } from './length'
+import { parseLengthInput, parseThicknessInput } from './length'
 
 describe('parseLengthInput', () => {
   it('treats bare numbers as meters', () => {
@@ -25,5 +25,17 @@ describe('parseLengthInput', () => {
     expect(parseLengthInput('0m')).toBeNull()
     expect(parseLengthInput('nope')).toBeNull()
     expect(parseLengthInput('-3m')).toBeNull()
+  })
+})
+
+describe('parseThicknessInput', () => {
+  it('treats bare numbers as millimeters', () => {
+    expect(parseThicknessInput('150')).toBe(150)
+    expect(parseThicknessInput('200mm')).toBe(200)
+  })
+
+  it('parses explicit meters and centimeters', () => {
+    expect(parseThicknessInput('0.15m')).toBe(150)
+    expect(parseThicknessInput('15cm')).toBe(150)
   })
 })

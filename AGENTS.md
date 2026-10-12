@@ -52,7 +52,7 @@ specs/            # product, architecture, phase specs
 
 ## Status
 
-- Phase: **04-wall-tool (complete)**
-- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool
-- Next: 05-select-edit
+- Phase: **05-select-edit (complete)**
+- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit
+- Next: 06-rooms
 - 3D: blocked until the 2D editor is complete

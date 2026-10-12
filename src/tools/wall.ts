@@ -9,7 +9,6 @@ export type WallSession = {
   start: PointMm | null
   /** Last snapped pointer position (not the typed-length end). */
   cursor: PointMm | null
-  selectedWallId: string | null
   typed: string
 }
 
@@ -24,7 +23,6 @@ export function createWallSession(): WallSession {
   return {
     start: null,
     cursor: null,
-    selectedWallId: null,
     typed: '',
   }
 }
@@ -84,7 +82,11 @@ export function handleWallClick(
   session: WallSession,
   ctx: PointerContext,
   hitWallId: string | null,
-): { session: WallSession; commit: WallCommit | null } {
+): {
+  session: WallSession
+  commit: WallCommit | null
+  selectId: string | null
+} {
   const snapped = snapPoint({ ...ctx, start: session.start })
 
   if (session.start === null) {
@@ -93,35 +95,39 @@ export function handleWallClick(
         session: {
           start: null,
           cursor: snapped.point,
-          selectedWallId: hitWallId,
           typed: '',
         },
         commit: null,
+        selectId: hitWallId,
       }
     }
     return {
       session: {
         start: snapped.point,
         cursor: snapped.point,
-        selectedWallId: null,
         typed: '',
       },
       commit: null,
+      selectId: null,
     }
   }
 
   const end = effectiveEnd(session.start, snapped.point, session.typed)
   if (distanceMm(session.start, end) < MIN_WALL_LENGTH_MM) {
-    return { session: { ...session, cursor: snapped.point }, commit: null }
+    return {
+      session: { ...session, cursor: snapped.point },
+      commit: null,
+      selectId: null,
+    }
   }
   return {
     session: {
       start: null,
       cursor: snapped.point,
-      selectedWallId: null,
       typed: '',
     },
     commit: { a: session.start, b: end },
+    selectId: null,
   }
 }
 
@@ -154,13 +160,6 @@ export function handleWallKey(
         handled: true,
       }
     }
-    if (session.selectedWallId) {
-      return {
-        session: { ...session, selectedWallId: null },
-        commit: null,
-        handled: true,
-      }
-    }
     return { session, commit: null, handled: false }
   }
 
@@ -181,7 +180,6 @@ export function handleWallKey(
       session: {
         start: null,
         cursor: toward,
-        selectedWallId: null,
         typed: '',
       },
       commit: { a: session.start, b: end },

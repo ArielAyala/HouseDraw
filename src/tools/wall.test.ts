@@ -94,25 +94,25 @@ describe('wall tool', () => {
 
   it('selects an existing wall on click when not drafting', () => {
     const walls = [sampleWall()]
-    const { session, commit } = handleWallClick(
+    const { session, commit, selectId } = handleWallClick(
       createWallSession(),
       ctx({ x: 1500, y: 2000 }, { walls }),
       'existing',
     )
     expect(commit).toBeNull()
     expect(session.start).toBeNull()
-    expect(session.selectedWallId).toBe('existing')
+    expect(selectId).toBe('existing')
   })
 
   it('starts from an endpoint instead of selecting that wall', () => {
     const walls = [sampleWall()]
-    const { session } = handleWallClick(
+    const { session, selectId } = handleWallClick(
       createWallSession(),
       ctx({ x: 10, y: 2010 }, { walls, radiusMm: 80 }),
       'existing',
     )
     expect(session.start).toEqual({ x: 0, y: 2000 })
-    expect(session.selectedWallId).toBeNull()
+    expect(selectId).toBeNull()
   })
 
   it('cancels an in-progress wall on Escape', () => {

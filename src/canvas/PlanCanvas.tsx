@@ -9,7 +9,11 @@ import {
 } from 'react'
 import { useTheme } from '../app/ThemeProvider'
 import { useDocumentStore } from '../document/store'
+import { moveWallsById } from '../tools/edit'
+import { pruneSelectedWallIds, useEditorStore } from '../tools/editor'
 import { distanceMm } from '../tools/geometry'
+import type { ToolPointer } from '../tools/pointer'
+import { useSelectTool } from '../tools/useSelectTool'
 import { useWallTool } from '../tools/useWallTool'
 import { wallPreview } from '../tools/wall'
 import {
@@ -32,6 +36,9 @@ import { formatDimensionMm, formatLengthMm, formatZoomPercent } from './units'
 export default function PlanCanvas() {
   const { theme } = useTheme()
   const plan = useDocumentStore((state) => state.document)
+  const tool = useEditorStore((state) => state.tool)
+  const selectedWallIds = useEditorStore((state) => state.selectedWallIds)
+  const setSelectedWallIds = useEditorStore((state) => state.setSelectedWallIds)
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cameraRef = useRef<Camera>(createCamera({ width: 0, height: 0 }))
@@ -43,12 +50,21 @@ export default function PlanCanvas() {
   const [spaceDown, setSpaceDown] = useState(false)
   const [panning, setPanning] = useState(false)
   const colors = canvasColorsFromTheme(theme)
-  const wallTool = useWallTool()
+  const wallTool = useWallTool(tool === 'wall')
+  const selectTool = useSelectTool(tool === 'select')
 
   const commitCamera = useCallback((next: Camera) => {
     cameraRef.current = next
     setCamera(next)
   }, [])
+
+  useEffect(() => {
+    const wallIds = plan.walls.map((wall) => wall.id)
+    const pruned = pruneSelectedWallIds(selectedWallIds, wallIds)
+    if (pruned.length !== selectedWallIds.length) {
+      setSelectedWallIds(pruned)
+    }
+  }, [plan.walls, selectedWallIds, setSelectedWallIds])
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -77,21 +93,35 @@ export default function PlanCanvas() {
     return () => observer.disconnect()
   }, [commitCamera])
 
-  const preview = wallPreview(wallTool.session)
+  const displayPlan = useMemo(() => {
+    const drag = selectTool.session.drag
+    if (!drag) {
+      return plan
+    }
+    return moveWallsById(plan, drag.wallIds, drag.delta)
+  }, [plan, selectTool.session.drag])
+
   const overlay = useMemo<PlanOverlay>(() => {
     const end = wallPreview(wallTool.session)
     return {
-      selectedWallId: wallTool.session.selectedWallId,
+      selectedWallIds,
       draft:
-        wallTool.session.start && end
+        tool === 'wall' && wallTool.session.start && end
           ? {
               a: wallTool.session.start,
               b: end,
               thicknessMm: plan.settings.wallThicknessMm,
             }
           : null,
+      marquee: tool === 'select' ? selectTool.session.marquee : null,
     }
-  }, [plan.settings.wallThicknessMm, wallTool.session])
+  }, [
+    plan.settings.wallThicknessMm,
+    selectTool.session.marquee,
+    selectedWallIds,
+    tool,
+    wallTool.session,
+  ])
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current
@@ -110,8 +140,8 @@ export default function PlanCanvas() {
     canvas.width = Math.round(width * dpr)
     canvas.height = Math.round(height * dpr)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    renderPlan(ctx, camera, { width, height }, colors, plan, overlay)
-  }, [camera, colors, overlay, plan])
+    renderPlan(ctx, camera, { width, height }, colors, displayPlan, overlay)
+  }, [camera, colors, displayPlan, overlay])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -168,11 +198,11 @@ export default function PlanCanvas() {
     }
   }, [])
 
-  const toWallPointer = (event: {
+  const toToolPointer = (event: {
     clientX: number
     clientY: number
     shiftKey: boolean
-  }) => {
+  }): ToolPointer | null => {
     const canvas = canvasRef.current
     if (!canvas) {
       return null
@@ -180,6 +210,7 @@ export default function PlanCanvas() {
     const screen = clientToCanvas(event, canvas)
     return {
       world: screenToWorld(cameraRef.current, screen),
+      screen,
       shiftKey: event.shiftKey,
       scale: cameraRef.current.scale,
     }
@@ -197,16 +228,26 @@ export default function PlanCanvas() {
     }
     if (event.button === 2) {
       event.preventDefault()
-      wallTool.onCancel()
+      if (tool === 'wall') {
+        wallTool.onCancel()
+      } else {
+        selectTool.onCancel()
+      }
       return
     }
     if (event.button !== 0) {
       return
     }
-    const pointer = toWallPointer(event)
-    if (pointer) {
-      wallTool.onClick(pointer)
+    const pointer = toToolPointer(event)
+    if (!pointer) {
+      return
     }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    if (tool === 'wall') {
+      wallTool.onClick(pointer)
+      return
+    }
+    selectTool.onPointerDown(pointer)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
@@ -219,21 +260,33 @@ export default function PlanCanvas() {
       commitCamera(panCamera(cameraRef.current, dx, dy))
       return
     }
-    const pointer = toWallPointer(event)
-    if (pointer) {
-      wallTool.onMove(pointer)
+    const pointer = toToolPointer(event)
+    if (!pointer) {
+      return
     }
+    if (tool === 'wall') {
+      wallTool.onMove(pointer)
+      return
+    }
+    selectTool.onPointerMove(pointer)
   }
 
   const onPointerUp = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (!panRef.current) {
-      return
-    }
-    panRef.current = null
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
-    setPanning(false)
+    if (panRef.current) {
+      panRef.current = null
+      setPanning(false)
+      return
+    }
+    if (tool !== 'select') {
+      return
+    }
+    const pointer = toToolPointer(event)
+    if (pointer) {
+      selectTool.onPointerUp(pointer)
+    }
   }
 
   const gridStep = activeGridStepMm(planGrid(camera.scale))
@@ -241,13 +294,17 @@ export default function PlanCanvas() {
     ? styles.panning
     : spaceDown
       ? styles.grab
-      : styles.crosshair
+      : tool === 'select'
+        ? styles.select
+        : styles.crosshair
 
-  const selectedWall = plan.walls.find(
-    (wall) => wall.id === wallTool.session.selectedWallId,
-  )
+  const selectedWall =
+    selectedWallIds.length === 1
+      ? displayPlan.walls.find((wall) => wall.id === selectedWallIds[0])
+      : undefined
+  const preview = wallPreview(wallTool.session)
   const statusLength =
-    wallTool.session.start && preview
+    tool === 'wall' && wallTool.session.start && preview
       ? formatDimensionMm(distanceMm(wallTool.session.start, preview))
       : selectedWall
         ? formatDimensionMm(distanceMm(selectedWall.a, selectedWall.b))
@@ -273,7 +330,7 @@ export default function PlanCanvas() {
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>Wall</span>
+        <span>{tool === 'select' ? 'Select' : 'Wall'}</span>
         {statusLength ? (
           <>
             <span className={styles.dot} aria-hidden="true">
@@ -282,7 +339,7 @@ export default function PlanCanvas() {
             <span>{statusLength}</span>
           </>
         ) : null}
-        {wallTool.session.typed ? (
+        {tool === 'wall' && wallTool.session.typed ? (
           <>
             <span className={styles.dot} aria-hidden="true">
               ·

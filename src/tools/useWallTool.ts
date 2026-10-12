@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { HIT_PADDING_PX, hitTestWall } from '../canvas/hitTest'
 import { historyHotkey, isTypingTarget } from '../document/hotkeys'
 import { useDocumentStore } from '../document/store'
-import type { PointMm } from '../document/types'
+import { deleteWallsById } from './edit'
+import { useEditorStore } from './editor'
+import type { ToolPointer } from './pointer'
 import { SNAP_RADIUS_PX } from './snap'
 import {
   addWallToDocument,
@@ -17,14 +19,10 @@ import {
   type WallSession,
 } from './wall'
 
-export type WallPointer = {
-  world: PointMm
-  shiftKey: boolean
-  scale: number
-}
-
-export function useWallTool() {
+export function useWallTool(active: boolean) {
   const apply = useDocumentStore((state) => state.apply)
+  const selectWall = useEditorStore((state) => state.selectWall)
+  const clearSelection = useEditorStore((state) => state.clearSelection)
   const [session, setSession] = useState<WallSession>(createWallSession)
   const sessionRef = useRef(session)
   const lastCtxRef = useRef<PointerContext | null>(null)
@@ -44,12 +42,13 @@ export function useWallTool() {
           ),
         ),
       )
-      setSession({ ...next, selectedWallId: id })
+      setSession(next)
+      selectWall(id)
     },
-    [apply],
+    [apply, selectWall],
   )
 
-  const pointerContext = useCallback((pointer: WallPointer): PointerContext => {
+  const pointerContext = useCallback((pointer: ToolPointer): PointerContext => {
     const document = useDocumentStore.getState().document
     return {
       raw: pointer.world,
@@ -61,7 +60,7 @@ export function useWallTool() {
   }, [])
 
   const onMove = useCallback(
-    (pointer: WallPointer) => {
+    (pointer: ToolPointer) => {
       const ctx = pointerContext(pointer)
       lastCtxRef.current = ctx
       setSession((current) => handleWallMove(current, ctx))
@@ -70,23 +69,28 @@ export function useWallTool() {
   )
 
   const onClick = useCallback(
-    (pointer: WallPointer) => {
+    (pointer: ToolPointer) => {
       const ctx = pointerContext(pointer)
       lastCtxRef.current = ctx
       const extraMm = HIT_PADDING_PX / pointer.scale
       const hit = hitTestWall(pointer.world, ctx.walls, extraMm)
-      const { session: next, commit } = handleWallClick(
-        sessionRef.current,
-        ctx,
-        hit?.id ?? null,
-      )
+      const {
+        session: next,
+        commit,
+        selectId,
+      } = handleWallClick(sessionRef.current, ctx, hit?.id ?? null)
       if (commit) {
         commitWall(commit, next)
         return
       }
       setSession(next)
+      if (selectId) {
+        selectWall(selectId)
+      } else {
+        clearSelection()
+      }
     },
-    [commitWall, pointerContext],
+    [clearSelection, commitWall, pointerContext, selectWall],
   )
 
   const onCancel = useCallback(() => {
@@ -94,6 +98,12 @@ export function useWallTool() {
   }, [])
 
   useEffect(() => {
+    if (!active) {
+      setSession(createWallSession())
+      lastCtxRef.current = null
+      return
+    }
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target) || historyHotkey(event)) {
         return
@@ -112,15 +122,30 @@ export function useWallTool() {
         commit,
         handled,
       } = handleWallKey(sessionRef.current, event.key)
-      if (!handled) {
+      if (handled) {
+        event.preventDefault()
+        if (commit) {
+          commitWall(commit, next)
+          return
+        }
+        setSession(next)
+        return
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        clearSelection()
+        return
+      }
+      if (event.key !== 'Delete' && event.key !== 'Backspace') {
+        return
+      }
+      const ids = useEditorStore.getState().selectedWallIds
+      if (ids.length === 0) {
         return
       }
       event.preventDefault()
-      if (commit) {
-        commitWall(commit, next)
-        return
-      }
-      setSession(next)
+      apply((document) => deleteWallsById(document, ids))
+      clearSelection()
     }
 
     const onKeyUp = (event: KeyboardEvent) => {
@@ -142,7 +167,7 @@ export function useWallTool() {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [commitWall])
+  }, [active, apply, clearSelection, commitWall])
 
   return { session, onMove, onClick, onCancel }
 }

@@ -1,10 +1,16 @@
 const LENGTH_RE = /^([0-9]+(?:\.[0-9]+)?)\s*(mm|cm|m)?$/i
 
-/**
- * Parse a typed wall length. Bare numbers are meters.
- * Returns integer millimeters, or null if the input is invalid.
- */
-export function parseLengthInput(input: string): number | null {
+function toMillimeters(value: number, unit: string): number {
+  if (unit === 'mm') {
+    return value
+  }
+  if (unit === 'cm') {
+    return value * 10
+  }
+  return value * 1000
+}
+
+function parseMeasuredInput(input: string, defaultUnit: string): number | null {
   const trimmed = input.trim()
   if (!trimmed) {
     return null
@@ -14,7 +20,7 @@ export function parseLengthInput(input: string): number | null {
     return null
   }
   const raw = match[1]
-  const unit = match[2]?.toLowerCase() ?? 'm'
+  const unit = match[2]?.toLowerCase() ?? defaultUnit
   if (raw === undefined) {
     return null
   }
@@ -22,19 +28,24 @@ export function parseLengthInput(input: string): number | null {
   if (!Number.isFinite(value) || value <= 0) {
     return null
   }
-  let mm: number
-  if (unit === 'mm') {
-    mm = value
-  } else if (unit === 'cm') {
-    mm = value * 10
-  } else {
-    mm = value * 1000
-  }
-  const rounded = Math.round(mm)
+  const rounded = Math.round(toMillimeters(value, unit))
   if (rounded <= 0) {
     return null
   }
   return rounded
+}
+
+/**
+ * Parse a typed wall length. Bare numbers are meters.
+ * Returns integer millimeters, or null if the input is invalid.
+ */
+export function parseLengthInput(input: string): number | null {
+  return parseMeasuredInput(input, 'm')
+}
+
+/** Parse wall thickness. Bare numbers are millimeters. */
+export function parseThicknessInput(input: string): number | null {
+  return parseMeasuredInput(input, 'mm')
 }
 
 export function isLengthBufferKey(key: string): boolean {

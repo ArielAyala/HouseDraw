@@ -23,6 +23,10 @@
   cursor: crosshair;
 }
 
+.select {
+  cursor: default;
+}
+
 .status {
   position: absolute;
   left: 12px;

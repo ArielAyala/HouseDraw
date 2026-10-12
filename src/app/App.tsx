@@ -1,6 +1,8 @@
 import { Moon, Sun } from 'lucide-react'
 import PlanCanvas from '../canvas/PlanCanvas'
 import { useDocumentHotkeys } from '../document/hotkeys'
+import Inspector from '../ui/Inspector'
+import Toolbar from '../ui/Toolbar'
 import styles from './App.module.css'
 import { useTheme } from './ThemeProvider'
 
@@ -28,6 +30,8 @@ export default function App() {
       </header>
       <main className={styles.stage}>
         <PlanCanvas />
+        <Toolbar />
+        <Inspector />
       </main>
     </div>
   )
