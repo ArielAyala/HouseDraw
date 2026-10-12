@@ -13,6 +13,7 @@ import { moveWallsById } from '../tools/edit'
 import { pruneSelectedWallIds, useEditorStore } from '../tools/editor'
 import { distanceMm } from '../tools/geometry'
 import type { ToolPointer } from '../tools/pointer'
+import { useRoomTool } from '../tools/useRoomTool'
 import { useSelectTool } from '../tools/useSelectTool'
 import { useWallTool } from '../tools/useWallTool'
 import { wallPreview } from '../tools/wall'
@@ -52,6 +53,7 @@ export default function PlanCanvas() {
   const colors = canvasColorsFromTheme(theme)
   const wallTool = useWallTool(tool === 'wall')
   const selectTool = useSelectTool(tool === 'select')
+  const roomTool = useRoomTool(tool === 'room')
 
   const commitCamera = useCallback((next: Camera) => {
     cameraRef.current = next
@@ -114,9 +116,14 @@ export default function PlanCanvas() {
             }
           : null,
       marquee: tool === 'select' ? selectTool.session.marquee : null,
+      roomDraft:
+        tool === 'room' && roomTool.session.start && roomTool.session.cursor
+          ? { a: roomTool.session.start, b: roomTool.session.cursor }
+          : null,
     }
   }, [
     plan.settings.wallThicknessMm,
+    roomTool.session,
     selectTool.session.marquee,
     selectedWallIds,
     tool,
@@ -230,6 +237,8 @@ export default function PlanCanvas() {
       event.preventDefault()
       if (tool === 'wall') {
         wallTool.onCancel()
+      } else if (tool === 'room') {
+        roomTool.onCancel()
       } else {
         selectTool.onCancel()
       }
@@ -245,6 +254,10 @@ export default function PlanCanvas() {
     event.currentTarget.setPointerCapture(event.pointerId)
     if (tool === 'wall') {
       wallTool.onClick(pointer)
+      return
+    }
+    if (tool === 'room') {
+      roomTool.onPointerDown(pointer)
       return
     }
     selectTool.onPointerDown(pointer)
@@ -268,6 +281,10 @@ export default function PlanCanvas() {
       wallTool.onMove(pointer)
       return
     }
+    if (tool === 'room') {
+      roomTool.onMove(pointer)
+      return
+    }
     selectTool.onPointerMove(pointer)
   }
 
@@ -280,10 +297,17 @@ export default function PlanCanvas() {
       setPanning(false)
       return
     }
+    const upPointer = toToolPointer(event)
+    if (tool === 'room') {
+      if (upPointer) {
+        roomTool.onPointerUp(upPointer)
+      }
+      return
+    }
     if (tool !== 'select') {
       return
     }
-    const pointer = toToolPointer(event)
+    const pointer = upPointer
     if (pointer) {
       selectTool.onPointerUp(pointer)
     }
@@ -330,7 +354,7 @@ export default function PlanCanvas() {
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>{tool === 'select' ? 'Select' : 'Wall'}</span>
+        <span>{tool === 'select' ? 'Select' : tool === 'room' ? 'Room' : 'Wall'}</span>
         {statusLength ? (
           <>
             <span className={styles.dot} aria-hidden="true">

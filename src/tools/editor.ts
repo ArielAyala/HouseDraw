@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type EditorTool = 'select' | 'wall'
+export type EditorTool = 'select' | 'wall' | 'room'
 
 export type EditorStore = {
   tool: EditorTool

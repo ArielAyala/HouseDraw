@@ -1,5 +1,6 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatDimensionMm } from '../canvas/units'
+import { detectRooms, formatAreaMm2, renameRoom } from '../document/rooms'
 import { useDocumentStore } from '../document/store'
 import {
   setWallLengthMm,
@@ -34,7 +35,7 @@ export default function Inspector() {
   }, [wall])
 
   if (selected.length === 0) {
-    return null
+    return <RoomsPanel />
   }
 
   if (!wall) {
@@ -124,5 +125,70 @@ export default function Inspector() {
         <span className={styles.meta}>mm</span>
       </form>
     </aside>
+  )
+}
+
+function RoomsPanel() {
+  const plan = useDocumentStore((state) => state.document)
+  const apply = useDocumentStore((state) => state.apply)
+  const rooms = useMemo(
+    () => detectRooms(plan.walls, plan.labels),
+    [plan.walls, plan.labels],
+  )
+  if (rooms.length === 0) {
+    return null
+  }
+  return (
+    <aside className={styles.panel} aria-label="Rooms">
+      <h2 className={styles.title}>Rooms</h2>
+      {rooms.map((room) => (
+        <RoomRow
+          key={room.id}
+          name={room.name}
+          area={formatAreaMm2(room.areaMm2)}
+          onRename={(name) =>
+            apply((document) =>
+              renameRoom(document, room.id, name, crypto.randomUUID()),
+            )
+          }
+        />
+      ))}
+    </aside>
+  )
+}
+
+function RoomRow(props: {
+  name: string
+  area: string
+  onRename: (name: string) => void
+}) {
+  const { name, area, onRename } = props
+  const [value, setValue] = useState(name)
+  useEffect(() => setValue(name), [name])
+  const commit = () => {
+    const next = value.trim()
+    if (next === '' || next === name) {
+      setValue(name)
+      return
+    }
+    onRename(next)
+  }
+  return (
+    <form
+      className={styles.field}
+      onSubmit={(event) => {
+        event.preventDefault()
+        commit()
+      }}
+    >
+      <input
+        className={styles.input}
+        aria-label="Room name"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={commit}
+      />
+      <span className={styles.meta}>{area}</span>
+    </form>
   )
 }

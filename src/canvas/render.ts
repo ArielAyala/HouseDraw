@@ -1,3 +1,9 @@
+import {
+  detectRooms,
+  formatAreaMm2,
+  pointInPolygon,
+  type Room,
+} from '../document/rooms'
 import type { PlanDocument, PointMm } from '../document/types'
 import type { Marquee } from '../tools/select'
 import { type Camera, type Size, visibleWorld, worldToScreen } from './camera'
@@ -16,12 +22,14 @@ export type CanvasColors = {
   labelText: string
   marqueeFill: string
   marqueeStroke: string
+  roomFill: string
 }
 
 export type PlanOverlay = {
   selectedWallIds: string[]
   draft: { a: PointMm; b: PointMm; thicknessMm: number } | null
   marquee: Marquee | null
+  roomDraft?: { a: PointMm; b: PointMm } | null
 }
 
 export function renderPlan(
@@ -56,6 +64,11 @@ export function renderPlan(
   strokeGrid(ctx, camera, view, size, grid.majorMm, colors.major, 1, null)
   strokeOrigin(ctx, camera, size, colors.origin)
 
+  const rooms = detectRooms(plan.walls, plan.labels)
+  for (const room of rooms) {
+    fillRoom(ctx, camera, room, colors)
+  }
+
   const selectedIds = new Set(overlay.selectedWallIds)
   const selected = plan.walls.filter((wall) => selectedIds.has(wall.id))
 
@@ -85,6 +98,14 @@ export function renderPlan(
     if (wall) {
       drawLengthLabel(ctx, camera, wall.a, wall.b, wall.thicknessMm, colors)
     }
+  }
+
+  for (const room of rooms) {
+    drawRoomLabel(ctx, camera, room, colors)
+  }
+
+  if (overlay.roomDraft) {
+    strokeRoomDraft(ctx, camera, overlay.roomDraft, colors)
   }
 
   if (overlay.draft) {
@@ -174,6 +195,80 @@ function strokeWall(
   ctx.moveTo(a.x, a.y)
   ctx.lineTo(b.x, b.y)
   ctx.stroke()
+  ctx.restore()
+}
+
+function fillRoom(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  room: Room,
+  colors: CanvasColors,
+): void {
+  ctx.save()
+  ctx.fillStyle = colors.roomFill
+  ctx.beginPath()
+  room.polygon.forEach((point, i) => {
+    const s = worldToScreen(camera, point)
+    if (i === 0) {
+      ctx.moveTo(s.x, s.y)
+    } else {
+      ctx.lineTo(s.x, s.y)
+    }
+  })
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
+function drawRoomLabel(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  room: Room,
+  colors: CanvasColors,
+): void {
+  const at = pointInPolygon(room.centroid, room.polygon)
+    ? room.centroid
+    : (room.polygon[0] ?? room.centroid)
+  const s = worldToScreen(camera, at)
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = colors.labelText
+  ctx.font = '600 13px system-ui, "Segoe UI", Roboto, sans-serif'
+  ctx.fillText(room.name, s.x, s.y - 8)
+  ctx.font = '12px system-ui, "Segoe UI", Roboto, sans-serif'
+  ctx.fillText(formatAreaMm2(room.areaMm2), s.x, s.y + 8)
+  ctx.restore()
+}
+
+function strokeRoomDraft(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  draft: { a: PointMm; b: PointMm },
+  colors: CanvasColors,
+): void {
+  const a = worldToScreen(camera, draft.a)
+  const b = worldToScreen(camera, draft.b)
+  ctx.save()
+  ctx.fillStyle = colors.roomFill
+  ctx.strokeStyle = colors.wallDraft
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 4])
+  ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y)
+  ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y)
+  ctx.restore()
+  ctx.save()
+  ctx.fillStyle = colors.labelText
+  ctx.font = '12px system-ui, "Segoe UI", Roboto, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const w = Math.abs(draft.b.x - draft.a.x)
+  const h = Math.abs(draft.b.y - draft.a.y)
+  ctx.fillText(
+    `${formatDimensionMm(w)} × ${formatDimensionMm(h)}`,
+    (a.x + b.x) / 2,
+    (a.y + b.y) / 2,
+  )
   ctx.restore()
 }
 

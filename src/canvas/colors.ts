@@ -16,6 +16,7 @@ export function canvasColorsFromTheme(theme: Theme): CanvasColors {
       labelText: '#18181b',
       marqueeFill: 'rgba(79, 70, 229, 0.12)',
       marqueeStroke: 'rgba(79, 70, 229, 0.7)',
+      roomFill: 'rgba(79, 70, 229, 0.07)',
     }
   }
   return {
@@ -30,5 +31,6 @@ export function canvasColorsFromTheme(theme: Theme): CanvasColors {
     labelText: '#ececec',
     marqueeFill: 'rgba(139, 147, 255, 0.16)',
     marqueeStroke: 'rgba(139, 147, 255, 0.75)',
+    roomFill: 'rgba(139, 147, 255, 0.08)',
   }
 }
