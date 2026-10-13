@@ -13,6 +13,7 @@ export type DocumentStore = {
   past: PlanDocument[]
   future: PlanDocument[]
   apply: (mutate: (document: PlanDocument) => PlanDocument) => void
+  replaceDocument: (document: PlanDocument) => void
   undo: () => void
   redo: () => void
 }
@@ -23,6 +24,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     const { document, past, future } = get()
     set(applyDocumentChange({ document, past, future }, mutate))
   },
+  replaceDocument: (document) => set(createHistory(document)),
   undo: () => {
     const { document, past, future } = get()
     set(undoDocument({ document, past, future }))

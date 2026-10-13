@@ -49,4 +49,18 @@ describe('document store', () => {
     redo()
     expect(useDocumentStore.getState().document.walls[0]?.b.x).toBe(4000)
   })
+
+  it('replaces the document and clears undo history', () => {
+    const { apply, replaceDocument } = useDocumentStore.getState()
+    apply(addDummyWall)
+
+    const loaded = createEmptyDocument()
+    loaded.labels.push({ id: 'label-1', text: 'Hall', x: 0, y: 0 })
+    replaceDocument(loaded)
+
+    const state = useDocumentStore.getState()
+    expect(state.document).toEqual(loaded)
+    expect(state.past).toEqual([])
+    expect(state.future).toEqual([])
+  })
 })

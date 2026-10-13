@@ -52,8 +52,9 @@ specs/            # product, architecture, phase specs
 
 ## Status
 
-- Phase: **08-catalog (done)**
-- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog
-- 08-catalog: data in `src/catalog/catalog.ts` (19 entries, 5 groups, symbols in normalized 0..1 space). Left panel in `src/ui/Catalog.tsx`: click arms the stamp tool, drag drops onto the canvas. Items are centered, snapped to grid, and stored as `Item` (x/y = center mm). Select tool moves items (snapped to grid), R or Inspector "Rotate 90°" rotates, Delete removes. Inspector shows size and rotation. Lint, typecheck and 118 tests pass.
-- Next: start 09 (file I/O: save/open JSON, autosave, PNG export)
+- Phase: **09-file-io (done)**
+- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog, 09-file-io
+- 09-file-io: `src/file/`. `documentFile.ts` parses and serializes `.housedraw.json` with explicit validation, rejects unknown future `version` values, and has a `MIGRATIONS` table (empty while only v1 exists). `fileIO.ts` does Open/Save with the File System Access API and falls back to input/download. `autosave.ts` + `useAutosave.ts` write to `localStorage` key `housedraw.document` (debounced, flushed on `pagehide`). `main.tsx` restores it silently before first render. If the autosave cannot be read, it shows an alert and the next edit replaces it. `exportPng.ts` exports a fit-to-content PNG. Topbar buttons in `src/ui/FileActions.tsx`; Ctrl+S saves, Ctrl+O opens. `replaceDocument` in the store clears history. Lint, typecheck and 140 tests pass.
+- Next: start 10 (UI polish, see `specs/phases/10-ui-polish.md`)
 - 3D: blocked until the 2D editor is complete
+

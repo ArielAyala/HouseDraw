@@ -23,6 +23,12 @@
   gap: 8px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .mark {
   width: 18px;
   height: 18px;
