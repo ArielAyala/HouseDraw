@@ -75,7 +75,12 @@ describe('rooms', () => {
   it('finds two rooms sharing a wall', () => {
     const walls: Wall[] = [
       ...rect,
-      { id: 'mid', a: { x: 0, y: 0 }, b: { x: 4000, y: 5000 }, thicknessMm: 150 },
+      {
+        id: 'mid',
+        a: { x: 0, y: 0 },
+        b: { x: 4000, y: 5000 },
+        thicknessMm: 150,
+      },
     ]
     const rooms = detectRooms(walls)
     expect(rooms).toHaveLength(2)

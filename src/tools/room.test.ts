@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument } from '../document/empty'
 import { detectRooms, formatAreaMm2 } from '../document/rooms'
-import {
-  addRoomToDocument,
-  createRoomWalls,
-  isValidRoomRect,
-} from './room'
+import { addRoomToDocument, createRoomWalls, isValidRoomRect } from './room'
 
 describe('room tool', () => {
   const a = { x: 0, y: 0 }

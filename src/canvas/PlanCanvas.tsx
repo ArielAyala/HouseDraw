@@ -354,7 +354,9 @@ export default function PlanCanvas() {
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>{tool === 'select' ? 'Select' : tool === 'room' ? 'Room' : 'Wall'}</span>
+        <span>
+          {tool === 'select' ? 'Select' : tool === 'room' ? 'Room' : 'Wall'}
+        </span>
         {statusLength ? (
           <>
             <span className={styles.dot} aria-hidden="true">
