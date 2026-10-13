@@ -39,6 +39,7 @@ src/document/     # types, store, undo (from phase 03)
 src/catalog/      # furniture stamps (from phase 08)
 src/ui/           # toolbars, panels
 src/file/         # open/save/export (from phase 09)
+src/view3d/       # generated 3D preview, read-only (from phase 11)
 specs/            # product, architecture, phase specs
 ```
 
@@ -52,10 +53,10 @@ specs/            # product, architecture, phase specs
 
 ## Status
 
-- Phase: **10-ui-polish (done). 2D editor V1 complete.**
-- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog, 09-file-io, 10-ui-polish
+- Phase: **11-3d-preview (done). All phases 01–11 are complete.**
+- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog, 09-file-io, 10-ui-polish, 11-3d-preview
+- 11-3d-preview: `src/view3d/`. `model.ts` is pure: it extrudes walls to 2400 mm, splits them around openings (door void with lintel, window void with sill and lintel), and turns items into 900 mm boxes. Plan (x, y) maps to three.js (x, z), and height is y. `Preview3D.tsx` uses React Three Fiber and drei `OrbitControls`. It is loaded with `lazy` and shown when `viewMode === 'model'` (toggle button in the topbar, `src/tools/editor.ts`). It reads the document and never mutates it. Added deps: `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three`. Lint, typecheck, 152 tests and build pass. The 3D view was not checked visually in a browser.
+- Next: none in `specs/phases/`. Ideas for later are in `specs/product.md` (multiple floors, PDF export, takeoffs).
 - 10-ui-polish: toolbar has Pan, Select, Wall, Room, Door, Window, Stamp (`src/ui/Toolbar.tsx`, shortcut in each tooltip). Tool keys in `src/tools/shortcuts.ts`: `V` select, `W` wall, `H` pan (ignored while typing or with modifiers). Pan tool is `EditorTool 'pan'`, also reachable with Space. Empty state copy shows when there are no walls (`EmptyState` in `PlanCanvas.tsx`). Bottom bar shows zoom, grid, units and active tool. In Select mode, hovering a wall or item highlights it and shows a move cursor (`hover` state in `PlanCanvas.tsx`, `hoverWallId`/`hoverItemId` in `render.ts`). Theme toggle has a title. Lint, typecheck and 143 tests pass.
 - 09-file-io: `src/file/`. `documentFile.ts` parses and serializes `.housedraw.json` with explicit validation, rejects unknown future `version` values, and has a `MIGRATIONS` table (empty while only v1 exists). `fileIO.ts` does Open/Save with the File System Access API and falls back to input/download. `autosave.ts` + `useAutosave.ts` write to `localStorage` key `housedraw.document` (debounced, flushed on `pagehide`). `main.tsx` restores it silently before first render. If the autosave cannot be read, it shows an alert and the next edit replaces it. `exportPng.ts` exports a fit-to-content PNG. Topbar buttons in `src/ui/FileActions.tsx`; Ctrl+S saves, Ctrl+O opens. `replaceDocument` in the store clears history. Lint, typecheck and 140 tests pass.
-- Next: start 11 (3D preview, see `specs/phases/11-3d-preview.md`)
-- 3D: unblocked, the 2D editor (phases 01–10) is complete
 

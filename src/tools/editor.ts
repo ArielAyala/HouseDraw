@@ -11,13 +11,18 @@ export type EditorTool =
   | 'window'
   | 'stamp'
 
+/** `plan` is the editable 2D view; `model` is the read-only 3D preview. */
+export type ViewMode = 'plan' | 'model'
+
 export type EditorStore = {
   tool: EditorTool
+  viewMode: ViewMode
   selectedWallIds: string[]
   selectedItemIds: string[]
   stampId: string | null
   openingWidthMm: Record<OpeningKind, number>
   setTool: (tool: EditorTool) => void
+  setViewMode: (mode: ViewMode) => void
   setStampId: (catalogId: string | null) => void
   setOpeningWidthMm: (kind: OpeningKind, widthMm: number) => void
   setSelectedWallIds: (ids: string[]) => void
@@ -31,11 +36,13 @@ export type EditorStore = {
 
 export const useEditorStore = create<EditorStore>((set) => ({
   tool: 'select',
+  viewMode: 'plan',
   selectedWallIds: [],
   selectedItemIds: [],
   stampId: null,
   openingWidthMm: { ...DEFAULT_OPENING_WIDTH_MM },
   setTool: (tool) => set({ tool }),
+  setViewMode: (viewMode) => set({ viewMode }),
   setStampId: (catalogId) => set({ stampId: catalogId, tool: 'stamp' }),
   setOpeningWidthMm: (kind, widthMm) =>
     set((state) => ({
