@@ -4,6 +4,7 @@ import type { OpeningKind } from '../document/types'
 
 export type EditorTool =
   | 'select'
+  | 'pan'
   | 'wall'
   | 'room'
   | 'door'

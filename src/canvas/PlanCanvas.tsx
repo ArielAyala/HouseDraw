@@ -10,10 +10,12 @@ import {
 } from 'react'
 import { useTheme } from '../app/ThemeProvider'
 import { CATALOG_DRAG_TYPE } from '../catalog/catalog'
-import { moveItemsById } from '../document/items'
+import { itemAtPoint, moveItemsById } from '../document/items'
 import { useDocumentStore } from '../document/store'
+import type { PlanDocument } from '../document/types'
 import { moveWallsById } from '../tools/edit'
 import {
+  type EditorTool,
   pruneSelectedItemIds,
   pruneSelectedWallIds,
   useEditorStore,
@@ -39,9 +41,24 @@ import {
 } from './camera'
 import { canvasColorsFromTheme } from './colors'
 import { activeGridStepMm, planGrid } from './grid'
+import { HIT_PADDING_PX, hitTestWall } from './hitTest'
 import styles from './PlanCanvas.module.css'
 import { type PlanOverlay, renderPlan } from './render'
 import { formatDimensionMm, formatLengthMm, formatZoomPercent } from './units'
+
+type Hover = { wallId: string | null; itemId: string | null }
+
+const NO_HOVER: Hover = { wallId: null, itemId: null }
+
+const TOOL_LABELS: Record<EditorTool, string> = {
+  select: 'Select',
+  pan: 'Pan',
+  wall: 'Wall',
+  room: 'Room',
+  door: 'Door',
+  window: 'Window',
+  stamp: 'Stamp',
+}
 
 export default function PlanCanvas() {
   const { theme } = useTheme()
@@ -61,6 +78,7 @@ export default function PlanCanvas() {
   const [camera, setCamera] = useState<Camera>(cameraRef.current)
   const [spaceDown, setSpaceDown] = useState(false)
   const [panning, setPanning] = useState(false)
+  const [hover, setHover] = useState<Hover>(NO_HOVER)
   const colors = canvasColorsFromTheme(theme)
   const openingKind =
     tool === 'door' ? 'door' : tool === 'window' ? 'window' : null
@@ -151,6 +169,8 @@ export default function PlanCanvas() {
       openingPreview: openingKind ? openingTool.preview : null,
       selectedItemIds,
       itemPreview: tool === 'stamp' ? stampTool.preview : null,
+      hoverWallId: tool === 'select' ? hover.wallId : null,
+      hoverItemId: tool === 'select' ? hover.itemId : null,
     }
   }, [
     openingKind,
@@ -163,6 +183,7 @@ export default function PlanCanvas() {
     stampTool.preview,
     tool,
     wallTool.session,
+    hover,
   ])
 
   useLayoutEffect(() => {
@@ -259,7 +280,8 @@ export default function PlanCanvas() {
   }
 
   const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
-    const panWithLeft = event.button === 0 && spaceRef.current
+    const panWithLeft =
+      event.button === 0 && (spaceRef.current || tool === 'pan')
     const panWithMiddle = event.button === 1
     if (panWithLeft || panWithMiddle) {
       event.preventDefault()
@@ -336,6 +358,14 @@ export default function PlanCanvas() {
       stampTool.onMove(pointer)
       return
     }
+    if (tool === 'pan') {
+      return
+    }
+    if (tool === 'select') {
+      const session = selectTool.session
+      const busy = session.drag || session.itemDrag || session.marquee
+      setHover(busy ? NO_HOVER : hoverAt(pointer, displayPlan))
+    }
     selectTool.onPointerMove(pointer)
   }
 
@@ -384,12 +414,15 @@ export default function PlanCanvas() {
   }
 
   const gridStep = activeGridStepMm(planGrid(camera.scale))
+  const hovering = hover.wallId !== null || hover.itemId !== null
   const cursorClass = panning
     ? styles.panning
-    : spaceDown
+    : spaceDown || tool === 'pan'
       ? styles.grab
       : tool === 'select'
-        ? styles.select
+        ? hovering
+          ? styles.move
+          : styles.select
         : styles.crosshair
 
   const selectedWall =
@@ -413,10 +446,12 @@ export default function PlanCanvas() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={() => setHover(NO_HOVER)}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onContextMenu={(event) => event.preventDefault()}
       />
+      {plan.walls.length === 0 ? <EmptyState /> : null}
       <div className={styles.status}>
         <span>{formatZoomPercent(zoomPercent(camera))}</span>
         <span className={styles.dot} aria-hidden="true">
@@ -426,19 +461,11 @@ export default function PlanCanvas() {
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>
-          {tool === 'select'
-            ? 'Select'
-            : tool === 'room'
-              ? 'Room'
-              : tool === 'door'
-                ? 'Door'
-                : tool === 'window'
-                  ? 'Window'
-                  : tool === 'stamp'
-                    ? 'Stamp'
-                    : 'Wall'}
+        <span>Units m / cm</span>
+        <span className={styles.dot} aria-hidden="true">
+          ·
         </span>
+        <span>{TOOL_LABELS[tool]}</span>
         {statusLength ? (
           <>
             <span className={styles.dot} aria-hidden="true">
@@ -456,6 +483,26 @@ export default function PlanCanvas() {
           </>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+function hoverAt(pointer: ToolPointer, plan: PlanDocument): Hover {
+  const extraMm = HIT_PADDING_PX / pointer.scale
+  const item = itemAtPoint(pointer.world, plan.items, extraMm)
+  if (item) {
+    return { wallId: null, itemId: item.id }
+  }
+  const wall = hitTestWall(pointer.world, plan.walls, extraMm)
+  return { wallId: wall?.id ?? null, itemId: null }
+}
+
+function EmptyState() {
+  return (
+    <div className={styles.empty}>
+      <h2 className={styles.emptyTitle}>Start your plan</h2>
+      <p>Press W, then click to start a wall. Click again to end it.</p>
+      <p>Esc stops drawing. Hold Space or press H to pan, scroll to zoom.</p>
     </div>
   )
 }

@@ -27,6 +27,35 @@
   cursor: default;
 }
 
+.move {
+  cursor: move;
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--hd-text-muted);
+  text-align: center;
+  pointer-events: none;
+}
+
+.emptyTitle {
+  margin: 0 0 4px;
+  color: var(--hd-text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
 .status {
   position: absolute;
   left: 12px;

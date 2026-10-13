@@ -2,6 +2,7 @@ import { Moon, Sun } from 'lucide-react'
 import PlanCanvas from '../canvas/PlanCanvas'
 import { useDocumentHotkeys } from '../document/hotkeys'
 import { useAutosave } from '../file/useAutosave'
+import { useToolHotkeys } from '../tools/shortcuts'
 import Catalog from '../ui/Catalog'
 import FileActions from '../ui/FileActions'
 import Inspector from '../ui/Inspector'
@@ -12,6 +13,7 @@ import { useTheme } from './ThemeProvider'
 export default function App() {
   useDocumentHotkeys()
   useAutosave()
+  useToolHotkeys()
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -27,6 +29,7 @@ export default function App() {
             type="button"
             className={styles.iconButton}
             onClick={toggleTheme}
+            title="Toggle theme"
             aria-label={
               theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
             }

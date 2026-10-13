@@ -39,6 +39,8 @@ export type PlanOverlay = {
   openingPreview?: OpeningDraft | null
   selectedItemIds?: string[]
   itemPreview?: ItemDraft | null
+  hoverWallId?: string | null
+  hoverItemId?: string | null
 }
 
 export function renderPlan(
@@ -85,7 +87,12 @@ export function renderPlan(
     if (selectedIds.has(wall.id)) {
       continue
     }
-    strokeWall(ctx, camera, wall, colors.wall)
+    strokeWall(
+      ctx,
+      camera,
+      wall,
+      wall.id === overlay.hoverWallId ? colors.wallDraft : colors.wall,
+    )
   }
 
   for (const wall of selected) {
@@ -113,13 +120,15 @@ export function renderPlan(
 
   const selectedItems = new Set(overlay.selectedItemIds ?? [])
   for (const item of plan.items) {
-    drawItem(
-      ctx,
-      camera,
-      item,
-      selectedItems.has(item.id) ? colors.wallSelected : colors.item,
-      colors.itemFill,
-    )
+    const selectedItem = selectedItems.has(item.id)
+    const hovered = item.id === overlay.hoverItemId
+    let color = colors.item
+    if (selectedItem) {
+      color = colors.wallSelected
+    } else if (hovered) {
+      color = colors.wallDraft
+    }
+    drawItem(ctx, camera, item, color, colors.itemFill)
   }
 
   if (overlay.itemPreview) {
