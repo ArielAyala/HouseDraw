@@ -52,8 +52,7 @@ specs/            # product, architecture, phase specs
 
 ## Status
 
-- Phase: **06-rooms (implemented, unverified)**
-- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit
-- 06-rooms: code and tests written; lint, typecheck and tests have NOT been run (Node/pnpm not available in the agent shell)
-- Next: run `pnpm lint:fix`, `pnpm typecheck`, `pnpm test:run`; fix any failures, then mark 06 done and start 07
+- Phase: **06-rooms (done)**
+- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms
+- Next: start 07 (openings / doors / windows)
 - 3D: blocked until the 2D editor is complete
