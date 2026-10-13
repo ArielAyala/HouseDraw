@@ -1,3 +1,4 @@
+import type { ItemDraft } from '../document/items'
 import { openingSpan } from '../document/openings'
 import {
   detectRooms,
@@ -10,6 +11,7 @@ import type { OpeningDraft } from '../tools/opening'
 import type { Marquee } from '../tools/select'
 import { type Camera, type Size, visibleWorld, worldToScreen } from './camera'
 import { gridLines, isMajorLine, planGrid } from './grid'
+import { drawItem } from './itemRender'
 import { formatDimensionMm } from './units'
 
 export type CanvasColors = {
@@ -25,6 +27,8 @@ export type CanvasColors = {
   marqueeFill: string
   marqueeStroke: string
   roomFill: string
+  item: string
+  itemFill: string
 }
 
 export type PlanOverlay = {
@@ -33,6 +37,8 @@ export type PlanOverlay = {
   marquee: Marquee | null
   roomDraft?: { a: PointMm; b: PointMm } | null
   openingPreview?: OpeningDraft | null
+  selectedItemIds?: string[]
+  itemPreview?: ItemDraft | null
 }
 
 export function renderPlan(
@@ -103,6 +109,24 @@ export function renderPlan(
       drawOpening(ctx, camera, wall, overlay.openingPreview, colors)
       ctx.restore()
     }
+  }
+
+  const selectedItems = new Set(overlay.selectedItemIds ?? [])
+  for (const item of plan.items) {
+    drawItem(
+      ctx,
+      camera,
+      item,
+      selectedItems.has(item.id) ? colors.wallSelected : colors.item,
+      colors.itemFill,
+    )
+  }
+
+  if (overlay.itemPreview) {
+    ctx.save()
+    ctx.globalAlpha = 0.5
+    drawItem(ctx, camera, overlay.itemPreview, colors.item, colors.itemFill)
+    ctx.restore()
   }
 
   if (overlay.draft && segmentLengthMm(overlay.draft.a, overlay.draft.b) >= 1) {

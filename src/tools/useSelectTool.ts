@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HIT_PADDING_PX, hitTestWall } from '../canvas/hitTest'
 import { historyHotkey, isTypingTarget } from '../document/hotkeys'
+import {
+  deleteItemsById,
+  itemAtPoint,
+  moveItemsById,
+  rotateItemsById,
+} from '../document/items'
 import { useDocumentStore } from '../document/store'
 import type { PlanDocument } from '../document/types'
 import { deleteWallsById, isZeroDelta, moveWallsById } from './edit'
@@ -13,6 +19,7 @@ import {
   type DragState,
   marqueeSelection,
   type SelectSession,
+  snapDeltaToGrid,
   snapMoveDelta,
   updateMarquee,
   wallEndpoints,
@@ -24,23 +31,57 @@ const MARQUEE_MIN_PX = 4
 export function useSelectTool(active: boolean) {
   const apply = useDocumentStore((state) => state.apply)
   const selectedWallIds = useEditorStore((state) => state.selectedWallIds)
+  const selectedItemIds = useEditorStore((state) => state.selectedItemIds)
   const setSelectedWallIds = useEditorStore((state) => state.setSelectedWallIds)
   const selectWall = useEditorStore((state) => state.selectWall)
   const toggleWall = useEditorStore((state) => state.toggleWall)
+  const selectItem = useEditorStore((state) => state.selectItem)
+  const toggleItem = useEditorStore((state) => state.toggleItem)
   const clearSelection = useEditorStore((state) => state.clearSelection)
   const [session, setSession] = useState<SelectSession>(createSelectSession)
   const sessionRef = useRef(session)
   const selectedRef = useRef(selectedWallIds)
+  const selectedItemsRef = useRef(selectedItemIds)
   const downScreenRef = useRef<ToolPointer['screen'] | null>(null)
   sessionRef.current = session
   selectedRef.current = selectedWallIds
+  selectedItemsRef.current = selectedItemIds
 
   const onPointerDown = useCallback(
     (pointer: ToolPointer) => {
       const document = useDocumentStore.getState().document
       const extraMm = HIT_PADDING_PX / pointer.scale
-      const hit = hitTestWall(pointer.world, document.walls, extraMm)
+      const item = itemAtPoint(pointer.world, document.items, extraMm)
       downScreenRef.current = pointer.screen
+
+      if (item) {
+        let ids = selectedItemsRef.current
+        if (pointer.shiftKey) {
+          toggleItem(item.id)
+          ids = ids.includes(item.id)
+            ? ids.filter((id) => id !== item.id)
+            : [...ids, item.id]
+        } else if (!ids.includes(item.id)) {
+          selectItem(item.id)
+          ids = [item.id]
+        }
+        if (ids.length === 0) {
+          setSession(createSelectSession())
+          return
+        }
+        setSession({
+          marquee: null,
+          drag: null,
+          itemDrag: {
+            itemIds: ids,
+            origin: pointer.world,
+            delta: { x: 0, y: 0 },
+          },
+        })
+        return
+      }
+
+      const hit = hitTestWall(pointer.world, document.walls, extraMm)
 
       if (hit) {
         let ids = selectedRef.current
@@ -60,6 +101,7 @@ export function useSelectTool(active: boolean) {
         setSession({
           marquee: null,
           drag: beginDrag(ids, pointer.world, document.walls),
+          itemDrag: null,
         })
         return
       }
@@ -70,13 +112,30 @@ export function useSelectTool(active: boolean) {
       setSession({
         marquee: beginMarquee(pointer.world),
         drag: null,
+        itemDrag: null,
       })
     },
-    [clearSelection, selectWall, toggleWall],
+    [clearSelection, selectItem, selectWall, toggleItem, toggleWall],
   )
 
   const onPointerMove = useCallback((pointer: ToolPointer) => {
     const current = sessionRef.current
+    if (current.itemDrag) {
+      const document = useDocumentStore.getState().document
+      const delta = snapDeltaToGrid(
+        {
+          x: pointer.world.x - current.itemDrag.origin.x,
+          y: pointer.world.y - current.itemDrag.origin.y,
+        },
+        document.settings.gridMm,
+      )
+      setSession({
+        marquee: null,
+        drag: null,
+        itemDrag: { ...current.itemDrag, delta },
+      })
+      return
+    }
     if (current.drag) {
       const document = useDocumentStore.getState().document
       const moving = new Set(current.drag.wallIds)
@@ -93,6 +152,7 @@ export function useSelectTool(active: boolean) {
       setSession({
         marquee: null,
         drag: { ...current.drag, delta },
+        itemDrag: null,
       })
       return
     }
@@ -100,6 +160,7 @@ export function useSelectTool(active: boolean) {
       setSession({
         marquee: updateMarquee(current.marquee, pointer.world),
         drag: null,
+        itemDrag: null,
       })
     }
   }, [])
@@ -109,6 +170,11 @@ export function useSelectTool(active: boolean) {
       const current = sessionRef.current
       const down = downScreenRef.current
       downScreenRef.current = null
+      if (current.itemDrag) {
+        commitItemDrag(current.itemDrag, apply)
+        setSession(createSelectSession())
+        return
+      }
       if (current.drag) {
         commitDrag(current.drag, apply)
         setSession(createSelectSession())
@@ -138,7 +204,8 @@ export function useSelectTool(active: boolean) {
 
   const onCancel = useCallback(() => {
     downScreenRef.current = null
-    if (sessionRef.current.drag || sessionRef.current.marquee) {
+    const current = sessionRef.current
+    if (current.drag || current.marquee || current.itemDrag) {
       setSession(createSelectSession())
       return
     }
@@ -161,18 +228,36 @@ export function useSelectTool(active: boolean) {
         onCancel()
         return
       }
+      const current = sessionRef.current
+      if (current.drag || current.marquee || current.itemDrag) {
+        return
+      }
+      if (
+        (event.key === 'r' || event.key === 'R') &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        const itemIds = selectedItemsRef.current
+        if (itemIds.length === 0) {
+          return
+        }
+        event.preventDefault()
+        apply((document) => rotateItemsById(document, itemIds))
+        return
+      }
       if (event.key !== 'Delete' && event.key !== 'Backspace') {
         return
       }
-      if (sessionRef.current.drag || sessionRef.current.marquee) {
-        return
-      }
-      const ids = selectedRef.current
-      if (ids.length === 0) {
+      const wallIds = selectedRef.current
+      const itemIds = selectedItemsRef.current
+      if (wallIds.length === 0 && itemIds.length === 0) {
         return
       }
       event.preventDefault()
-      apply((document) => deleteWallsById(document, ids))
+      apply((document) =>
+        deleteItemsById(deleteWallsById(document, wallIds), itemIds),
+      )
       clearSelection()
     }
 
@@ -191,4 +276,14 @@ function commitDrag(
     return
   }
   apply((document) => moveWallsById(document, drag.wallIds, drag.delta))
+}
+
+function commitItemDrag(
+  drag: NonNullable<SelectSession['itemDrag']>,
+  apply: (mutate: (document: PlanDocument) => PlanDocument) => void,
+): void {
+  if (isZeroDelta(drag.delta)) {
+    return
+  }
+  apply((document) => moveItemsById(document, drag.itemIds, drag.delta))
 }

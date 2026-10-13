@@ -21,9 +21,16 @@ export type DragState = {
   delta: PointMm
 }
 
+export type ItemDragState = {
+  itemIds: string[]
+  origin: PointMm
+  delta: PointMm
+}
+
 export type SelectSession = {
   marquee: Marquee | null
   drag: DragState | null
+  itemDrag: ItemDragState | null
 }
 
 export type SnapMoveInput = {
@@ -36,7 +43,7 @@ export type SnapMoveInput = {
 }
 
 export function createSelectSession(): SelectSession {
-  return { marquee: null, drag: null }
+  return { marquee: null, drag: null, itemDrag: null }
 }
 
 export function rectFromPoints(a: PointMm, b: PointMm): RectMm {

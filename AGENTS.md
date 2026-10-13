@@ -52,8 +52,8 @@ specs/            # product, architecture, phase specs
 
 ## Status
 
-- Phase: **07-openings (done)**
-- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings
-- 07-openings: door/window tools place openings on walls (800 mm / 1200 mm defaults, editable in the panel). Click an existing opening with the door/window tool to remove it. Openings stay glued to the wall and are clamped or removed when the wall length changes. Lint, typecheck and 108 tests pass.
-- Next: start 08 (furniture catalog)
+- Phase: **08-catalog (done)**
+- Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog
+- 08-catalog: data in `src/catalog/catalog.ts` (19 entries, 5 groups, symbols in normalized 0..1 space). Left panel in `src/ui/Catalog.tsx`: click arms the stamp tool, drag drops onto the canvas. Items are centered, snapped to grid, and stored as `Item` (x/y = center mm). Select tool moves items (snapped to grid), R or Inspector "Rotate 90°" rotates, Delete removes. Inspector shows size and rotation. Lint, typecheck and 118 tests pass.
+- Next: start 09 (file I/O: save/open JSON, autosave, PNG export)
 - 3D: blocked until the 2D editor is complete

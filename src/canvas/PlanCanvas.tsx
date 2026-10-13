@@ -1,4 +1,5 @@
 import {
+  type DragEvent,
   type PointerEvent,
   useCallback,
   useEffect,
@@ -8,14 +9,21 @@ import {
   useState,
 } from 'react'
 import { useTheme } from '../app/ThemeProvider'
+import { CATALOG_DRAG_TYPE } from '../catalog/catalog'
+import { moveItemsById } from '../document/items'
 import { useDocumentStore } from '../document/store'
 import { moveWallsById } from '../tools/edit'
-import { pruneSelectedWallIds, useEditorStore } from '../tools/editor'
+import {
+  pruneSelectedItemIds,
+  pruneSelectedWallIds,
+  useEditorStore,
+} from '../tools/editor'
 import { distanceMm } from '../tools/geometry'
 import type { ToolPointer } from '../tools/pointer'
 import { useOpeningTool } from '../tools/useOpeningTool'
 import { useRoomTool } from '../tools/useRoomTool'
 import { useSelectTool } from '../tools/useSelectTool'
+import { useStampTool } from '../tools/useStampTool'
 import { useWallTool } from '../tools/useWallTool'
 import { wallPreview } from '../tools/wall'
 import {
@@ -40,7 +48,9 @@ export default function PlanCanvas() {
   const plan = useDocumentStore((state) => state.document)
   const tool = useEditorStore((state) => state.tool)
   const selectedWallIds = useEditorStore((state) => state.selectedWallIds)
+  const selectedItemIds = useEditorStore((state) => state.selectedItemIds)
   const setSelectedWallIds = useEditorStore((state) => state.setSelectedWallIds)
+  const setSelectedItemIds = useEditorStore((state) => state.setSelectedItemIds)
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cameraRef = useRef<Camera>(createCamera({ width: 0, height: 0 }))
@@ -58,6 +68,7 @@ export default function PlanCanvas() {
   const selectTool = useSelectTool(tool === 'select')
   const roomTool = useRoomTool(tool === 'room')
   const openingTool = useOpeningTool(openingKind)
+  const stampTool = useStampTool(tool === 'stamp')
 
   const commitCamera = useCallback((next: Camera) => {
     cameraRef.current = next
@@ -71,6 +82,14 @@ export default function PlanCanvas() {
       setSelectedWallIds(pruned)
     }
   }, [plan.walls, selectedWallIds, setSelectedWallIds])
+
+  useEffect(() => {
+    const itemIds = plan.items.map((item) => item.id)
+    const pruned = pruneSelectedItemIds(selectedItemIds, itemIds)
+    if (pruned.length !== selectedItemIds.length) {
+      setSelectedItemIds(pruned)
+    }
+  }, [plan.items, selectedItemIds, setSelectedItemIds])
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -101,11 +120,16 @@ export default function PlanCanvas() {
 
   const displayPlan = useMemo(() => {
     const drag = selectTool.session.drag
-    if (!drag) {
-      return plan
+    const itemDrag = selectTool.session.itemDrag
+    let next = plan
+    if (drag) {
+      next = moveWallsById(next, drag.wallIds, drag.delta)
     }
-    return moveWallsById(plan, drag.wallIds, drag.delta)
-  }, [plan, selectTool.session.drag])
+    if (itemDrag) {
+      next = moveItemsById(next, itemDrag.itemIds, itemDrag.delta)
+    }
+    return next
+  }, [plan, selectTool.session.drag, selectTool.session.itemDrag])
 
   const overlay = useMemo<PlanOverlay>(() => {
     const end = wallPreview(wallTool.session)
@@ -125,6 +149,8 @@ export default function PlanCanvas() {
           ? { a: roomTool.session.start, b: roomTool.session.cursor }
           : null,
       openingPreview: openingKind ? openingTool.preview : null,
+      selectedItemIds,
+      itemPreview: tool === 'stamp' ? stampTool.preview : null,
     }
   }, [
     openingKind,
@@ -132,7 +158,9 @@ export default function PlanCanvas() {
     plan.settings.wallThicknessMm,
     roomTool.session,
     selectTool.session.marquee,
+    selectedItemIds,
     selectedWallIds,
+    stampTool.preview,
     tool,
     wallTool.session,
   ])
@@ -246,7 +274,7 @@ export default function PlanCanvas() {
         wallTool.onCancel()
       } else if (tool === 'room') {
         roomTool.onCancel()
-      } else if (!openingKind) {
+      } else if (tool === 'select') {
         selectTool.onCancel()
       }
       return
@@ -269,6 +297,10 @@ export default function PlanCanvas() {
     }
     if (openingKind) {
       openingTool.onPointerDown(pointer)
+      return
+    }
+    if (tool === 'stamp') {
+      stampTool.onPointerDown(pointer)
       return
     }
     selectTool.onPointerDown(pointer)
@@ -300,7 +332,30 @@ export default function PlanCanvas() {
       openingTool.onMove(pointer)
       return
     }
+    if (tool === 'stamp') {
+      stampTool.onMove(pointer)
+      return
+    }
     selectTool.onPointerMove(pointer)
+  }
+
+  const onDragOver = (event: DragEvent<HTMLCanvasElement>) => {
+    if (event.dataTransfer.types.includes(CATALOG_DRAG_TYPE)) {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const onDrop = (event: DragEvent<HTMLCanvasElement>) => {
+    const catalogId = event.dataTransfer.getData(CATALOG_DRAG_TYPE)
+    if (!catalogId) {
+      return
+    }
+    event.preventDefault()
+    const pointer = toToolPointer(event)
+    if (pointer) {
+      stampTool.place(catalogId, pointer.world)
+    }
   }
 
   const onPointerUp = (event: PointerEvent<HTMLCanvasElement>) => {
@@ -358,6 +413,8 @@ export default function PlanCanvas() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         onContextMenu={(event) => event.preventDefault()}
       />
       <div className={styles.status}>
@@ -378,7 +435,9 @@ export default function PlanCanvas() {
                 ? 'Door'
                 : tool === 'window'
                   ? 'Window'
-                  : 'Wall'}
+                  : tool === 'stamp'
+                    ? 'Stamp'
+                    : 'Wall'}
         </span>
         {statusLength ? (
           <>

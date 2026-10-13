@@ -1,9 +1,11 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatDimensionMm } from '../canvas/units'
+import { findCatalogEntry } from '../catalog/catalog'
+import { deleteItemsById, rotateItemsById } from '../document/items'
 import { fitOpeningsToWall } from '../document/openings'
 import { detectRooms, formatAreaMm2, renameRoom } from '../document/rooms'
 import { useDocumentStore } from '../document/store'
-import type { OpeningKind } from '../document/types'
+import type { Item, OpeningKind } from '../document/types'
 import {
   setWallLengthMm,
   setWallThicknessMm,
@@ -28,6 +30,12 @@ export default function Inspector() {
   )
   const wall = selected.length === 1 ? selected[0] : undefined
 
+  const selectedItemIds = useEditorStore((state) => state.selectedItemIds)
+  const selectedItem =
+    selectedItemIds.length === 1
+      ? plan.items.find((item) => item.id === selectedItemIds[0])
+      : undefined
+
   const [lengthInput, setLengthInput] = useState('')
   const [thicknessInput, setThicknessInput] = useState('')
 
@@ -40,6 +48,10 @@ export default function Inspector() {
     setLengthInput(formatDimensionMm(distanceMm(wall.a, wall.b)))
     setThicknessInput(String(wall.thicknessMm))
   }, [wall])
+
+  if (selectedItem) {
+    return <ItemPanel item={selectedItem} />
+  }
 
   if (selected.length === 0) {
     if (tool === 'door' || tool === 'window') {
@@ -137,6 +149,47 @@ export default function Inspector() {
         />
         <span className={styles.meta}>mm</span>
       </form>
+    </aside>
+  )
+}
+
+function ItemPanel(props: { item: Item }) {
+  const { item } = props
+  const apply = useDocumentStore((state) => state.apply)
+  const clearSelection = useEditorStore((state) => state.clearSelection)
+  const entry = findCatalogEntry(item.catalogId)
+  return (
+    <aside className={styles.panel} aria-label="Item">
+      <h2 className={styles.title}>{entry?.label ?? 'Item'}</h2>
+      <div className={styles.field}>
+        <span className={styles.label}>Size</span>
+        <span className={styles.meta}>
+          {formatDimensionMm(item.widthMm)} × {formatDimensionMm(item.heightMm)}
+        </span>
+      </div>
+      <div className={styles.field}>
+        <span className={styles.label}>Rotation</span>
+        <span className={styles.meta}>{item.rotationDeg}°</span>
+      </div>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() =>
+          apply((document) => rotateItemsById(document, [item.id]))
+        }
+      >
+        Rotate 90°
+      </button>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={() => {
+          apply((document) => deleteItemsById(document, [item.id]))
+          clearSelection()
+        }}
+      >
+        Delete
+      </button>
     </aside>
   )
 }
