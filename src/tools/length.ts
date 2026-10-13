@@ -48,6 +48,11 @@ export function parseThicknessInput(input: string): number | null {
   return parseMeasuredInput(input, 'mm')
 }
 
+/** Parse opening width. Bare numbers are millimeters. */
+export function parseOpeningWidthInput(input: string): number | null {
+  return parseMeasuredInput(input, 'mm')
+}
+
 export function isLengthBufferKey(key: string): boolean {
   return /^[0-9.cCmM]$/.test(key)
 }

@@ -1,4 +1,10 @@
-import { Minus, MousePointer2, Square } from 'lucide-react'
+import {
+  DoorOpen,
+  Minus,
+  MousePointer2,
+  RectangleHorizontal,
+  Square,
+} from 'lucide-react'
 import { type EditorTool, useEditorStore } from '../tools/editor'
 import styles from './Toolbar.module.css'
 
@@ -6,6 +12,8 @@ const TOOLS: Array<{ id: EditorTool; label: string; icon: typeof Minus }> = [
   { id: 'select', label: 'Select', icon: MousePointer2 },
   { id: 'wall', label: 'Wall', icon: Minus },
   { id: 'room', label: 'Room', icon: Square },
+  { id: 'door', label: 'Door', icon: DoorOpen },
+  { id: 'window', label: 'Window', icon: RectangleHorizontal },
 ]
 
 export default function Toolbar() {

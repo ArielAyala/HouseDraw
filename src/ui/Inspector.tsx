@@ -1,7 +1,9 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatDimensionMm } from '../canvas/units'
+import { fitOpeningsToWall } from '../document/openings'
 import { detectRooms, formatAreaMm2, renameRoom } from '../document/rooms'
 import { useDocumentStore } from '../document/store'
+import type { OpeningKind } from '../document/types'
 import {
   setWallLengthMm,
   setWallThicknessMm,
@@ -9,12 +11,17 @@ import {
 } from '../tools/edit'
 import { useEditorStore } from '../tools/editor'
 import { distanceMm } from '../tools/geometry'
-import { parseLengthInput, parseThicknessInput } from '../tools/length'
+import {
+  parseLengthInput,
+  parseOpeningWidthInput,
+  parseThicknessInput,
+} from '../tools/length'
 import styles from './Inspector.module.css'
 
 export default function Inspector() {
   const plan = useDocumentStore((state) => state.document)
   const apply = useDocumentStore((state) => state.apply)
+  const tool = useEditorStore((state) => state.tool)
   const selectedWallIds = useEditorStore((state) => state.selectedWallIds)
   const selected = plan.walls.filter((wall) =>
     selectedWallIds.includes(wall.id),
@@ -35,6 +42,9 @@ export default function Inspector() {
   }, [wall])
 
   if (selected.length === 0) {
+    if (tool === 'door' || tool === 'window') {
+      return <OpeningPanel kind={tool} />
+    }
     return <RoomsPanel />
   }
 
@@ -61,8 +71,11 @@ export default function Inspector() {
       return
     }
     apply((document) =>
-      updateWallById(document, wall.id, (current) =>
-        setWallLengthMm(current, mm),
+      fitOpeningsToWall(
+        updateWallById(document, wall.id, (current) =>
+          setWallLengthMm(current, mm),
+        ),
+        wall.id,
       ),
     )
   }
@@ -121,6 +134,47 @@ export default function Inspector() {
           value={thicknessInput}
           onChange={(event) => setThicknessInput(event.target.value)}
           onBlur={commitThickness}
+        />
+        <span className={styles.meta}>mm</span>
+      </form>
+    </aside>
+  )
+}
+
+function OpeningPanel(props: { kind: OpeningKind }) {
+  const { kind } = props
+  const widthMm = useEditorStore((state) => state.openingWidthMm[kind])
+  const setOpeningWidthMm = useEditorStore((state) => state.setOpeningWidthMm)
+  const label = kind === 'door' ? 'Door' : 'Window'
+  const [value, setValue] = useState(String(widthMm))
+  useEffect(() => setValue(String(widthMm)), [widthMm])
+  const commit = () => {
+    const mm = parseOpeningWidthInput(value)
+    if (mm === null) {
+      setValue(String(widthMm))
+      return
+    }
+    setOpeningWidthMm(kind, mm)
+  }
+  return (
+    <aside className={styles.panel} aria-label={label}>
+      <h2 className={styles.title}>{label}</h2>
+      <form
+        className={styles.field}
+        onSubmit={(event) => {
+          event.preventDefault()
+          commit()
+        }}
+      >
+        <label className={styles.label} htmlFor={`${kind}-width`}>
+          Width
+        </label>
+        <input
+          id={`${kind}-width`}
+          className={styles.input}
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          onBlur={commit}
         />
         <span className={styles.meta}>mm</span>
       </form>

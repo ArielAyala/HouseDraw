@@ -1,10 +1,12 @@
+import { openingSpan } from '../document/openings'
 import {
   detectRooms,
   formatAreaMm2,
   pointInPolygon,
   type Room,
 } from '../document/rooms'
-import type { PlanDocument, PointMm } from '../document/types'
+import type { Opening, PlanDocument, PointMm, Wall } from '../document/types'
+import type { OpeningDraft } from '../tools/opening'
 import type { Marquee } from '../tools/select'
 import { type Camera, type Size, visibleWorld, worldToScreen } from './camera'
 import { gridLines, isMajorLine, planGrid } from './grid'
@@ -30,6 +32,7 @@ export type PlanOverlay = {
   draft: { a: PointMm; b: PointMm; thicknessMm: number } | null
   marquee: Marquee | null
   roomDraft?: { a: PointMm; b: PointMm } | null
+  openingPreview?: OpeningDraft | null
 }
 
 export function renderPlan(
@@ -81,6 +84,25 @@ export function renderPlan(
 
   for (const wall of selected) {
     strokeWall(ctx, camera, wall, colors.wallSelected)
+  }
+
+  for (const opening of plan.openings) {
+    const wall = plan.walls.find((item) => item.id === opening.wallId)
+    if (wall) {
+      drawOpening(ctx, camera, wall, opening, colors)
+    }
+  }
+
+  if (overlay.openingPreview) {
+    const wall = plan.walls.find(
+      (item) => item.id === overlay.openingPreview?.wallId,
+    )
+    if (wall) {
+      ctx.save()
+      ctx.globalAlpha = 0.5
+      drawOpening(ctx, camera, wall, overlay.openingPreview, colors)
+      ctx.restore()
+    }
   }
 
   if (overlay.draft && segmentLengthMm(overlay.draft.a, overlay.draft.b) >= 1) {
@@ -194,6 +216,51 @@ function strokeWall(
   ctx.beginPath()
   ctx.moveTo(a.x, a.y)
   ctx.lineTo(b.x, b.y)
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawOpening(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  wall: Wall,
+  opening: Pick<Opening, 'type' | 'offsetMm' | 'widthMm'>,
+  colors: CanvasColors,
+): void {
+  const span = openingSpan(wall, opening)
+  strokeWall(
+    ctx,
+    camera,
+    { a: span.a, b: span.b, thicknessMm: wall.thicknessMm },
+    colors.background,
+  )
+
+  const a = worldToScreen(camera, span.a)
+  const b = worldToScreen(camera, span.b)
+  ctx.save()
+  ctx.strokeStyle = colors.wall
+  ctx.lineWidth = 1
+  if (opening.type === 'window') {
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.stroke()
+    ctx.restore()
+    return
+  }
+
+  const angle = Math.atan2(b.y - a.y, b.x - a.x)
+  const radius = Math.hypot(b.x - a.x, b.y - a.y)
+  const leafX = a.x + Math.cos(angle + Math.PI / 2) * radius
+  const leafY = a.y + Math.sin(angle + Math.PI / 2) * radius
+  ctx.beginPath()
+  ctx.moveTo(a.x, a.y)
+  ctx.lineTo(leafX, leafY)
+  ctx.stroke()
+  ctx.strokeStyle = colors.wallDraft
+  ctx.setLineDash([4, 3])
+  ctx.beginPath()
+  ctx.arc(a.x, a.y, radius, angle, angle + Math.PI / 2)
   ctx.stroke()
   ctx.restore()
 }
