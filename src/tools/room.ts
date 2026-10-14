@@ -1,4 +1,3 @@
-import { DEFAULT_ROOM_NAME } from '../document/rooms'
 import type { PlanDocument, PointMm, Wall } from '../document/types'
 import { createWallEntity } from './wall'
 
@@ -63,7 +62,7 @@ export function addRoomToDocument(
       ...document.labels,
       {
         id: labelId,
-        text: DEFAULT_ROOM_NAME,
+        text: '',
         x: Math.round((a.x + b.x) / 2),
         y: Math.round((a.y + b.y) / 2),
       },

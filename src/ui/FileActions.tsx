@@ -1,5 +1,6 @@
 import { Download, FolderOpen, Save } from 'lucide-react'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '../app/ThemeProvider'
 import { useDocumentStore } from '../document/store'
 import type { PlanDocument } from '../document/types'
@@ -9,20 +10,21 @@ import { useEditorStore } from '../tools/editor'
 import styles from './FileActions.module.css'
 
 export default function FileActions() {
+  const { t } = useTranslation()
   const { theme } = useTheme()
 
   const onSave = async () => {
     try {
       await savePlanFile(useDocumentStore.getState().document)
     } catch (error) {
-      window.alert(errorMessage(error, 'Could not save the plan.'))
+      window.alert(errorMessage(error, t('file.saveError')))
     }
   }
 
   const onOpen = async () => {
     if (
       hasContent(useDocumentStore.getState().document) &&
-      !window.confirm('Replace the current plan with the file you open?')
+      !window.confirm(t('file.confirmReplace'))
     ) {
       return
     }
@@ -36,7 +38,7 @@ export default function FileActions() {
         useEditorStore.getState().clearSelection()
       }
     } catch (error) {
-      window.alert(errorMessage(error, 'Could not open the plan.'))
+      window.alert(errorMessage(error, t('file.openError')))
     }
   }
 
@@ -44,7 +46,7 @@ export default function FileActions() {
     try {
       await exportPlanPng(useDocumentStore.getState().document, theme)
     } catch (error) {
-      window.alert(errorMessage(error, 'Could not export the PNG.'))
+      window.alert(errorMessage(error, t('file.exportError')))
     }
   }
 
@@ -67,12 +69,12 @@ export default function FileActions() {
   })
 
   return (
-    <div className={styles.bar} role="toolbar" aria-label="File">
+    <div className={styles.bar} role="toolbar" aria-label={t('file.label')}>
       <button
         type="button"
         className={styles.button}
-        aria-label="Open plan"
-        title="Open plan (Ctrl+O)"
+        aria-label={t('file.open')}
+        title={t('file.openShortcut')}
         onClick={() => void onOpen()}
       >
         <FolderOpen size={16} />
@@ -80,8 +82,8 @@ export default function FileActions() {
       <button
         type="button"
         className={styles.button}
-        aria-label="Save plan"
-        title="Save plan (Ctrl+S)"
+        aria-label={t('file.save')}
+        title={t('file.saveShortcut')}
         onClick={() => void onSave()}
       >
         <Save size={16} />
@@ -89,8 +91,8 @@ export default function FileActions() {
       <button
         type="button"
         className={styles.button}
-        aria-label="Export PNG"
-        title="Export PNG"
+        aria-label={t('file.export')}
+        title={t('file.export')}
         onClick={() => void onExport()}
       >
         <Download size={16} />

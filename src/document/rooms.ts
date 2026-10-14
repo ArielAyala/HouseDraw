@@ -1,10 +1,9 @@
 import type { Label, PlanDocument, PointMm, Wall } from './types'
 
-export const DEFAULT_ROOM_NAME = 'Room'
-
 export type Room = {
   /** Stable id derived from the walls that bound the room. */
   id: string
+  /** User-defined name, or an empty string when the room is unnamed. */
   name: string
   polygon: PointMm[]
   wallIds: string[]
@@ -79,8 +78,13 @@ export function pointInPolygon(
   return inside
 }
 
-export function formatAreaMm2(areaMm2: number): string {
-  return `${(areaMm2 / 1_000_000).toFixed(2)} m²`
+export function formatAreaMm2(areaMm2: number, locale = 'en'): string {
+  const value = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(areaMm2 / 1_000_000)
+  return `${value} m²`
 }
 
 /**
@@ -165,7 +169,7 @@ function buildRoom(
   const label = labels.find((l) => pointInPolygon(l, polygon))
   return {
     id: wallIds.join('+'),
-    name: label?.text || DEFAULT_ROOM_NAME,
+    name: label?.text ?? '',
     polygon,
     wallIds,
     areaMm2: polygonAreaMm2(polygon),
@@ -187,7 +191,7 @@ export function renameRoom(
   if (!room) {
     return document
   }
-  const text = name.trim() || DEFAULT_ROOM_NAME
+  const text = name.trim()
   if (room.labelId) {
     return {
       ...document,

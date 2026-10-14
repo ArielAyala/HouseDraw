@@ -79,6 +79,17 @@
   outline-offset: 2px;
 }
 
+.langButton {
+  width: auto;
+  min-width: 32px;
+  padding: 0 8px;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .stage {
   flex: 1;
   min-height: 0;

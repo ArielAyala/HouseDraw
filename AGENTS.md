@@ -21,7 +21,7 @@ Use `pnpm lint:fix` to apply Biome fixes. Do not add a second linter.
 
 ## Conventions
 
-- Language: English for code, comments, commits, specs, and this file. UI copy is English in V1.
+- Language: English for code, comments, commits, specs, and this file. UI copy is available in English and Spanish (react-i18next, dictionaries in `src/i18n/`). Default is English.
 - TypeScript `strict` + `noUncheckedIndexedAccess`. No `any`. No enums (`erasableSyntaxOnly`).
 - Internal geometry uses **integer millimeters**. UI shows meters/centimeters.
 - Keep `document` (state) separate from `tools` (input) and `canvas` (render).
@@ -54,6 +54,7 @@ specs/            # product, architecture, phase specs
 ## Status
 
 - Phase: **11-3d-preview (done). All phases 01–11 are complete.**
+- i18n: UI is bilingual (English default, Spanish). `react-i18next` with dictionaries in `src/i18n/en.ts` and `es.ts` (`es` is typed as `typeof en`, so keys stay in sync). The EN/ES button in the topbar (next to the theme toggle) saves the choice in `localStorage` key `housedraw.language`. Numbers use the active locale (`1,5 m` in Spanish). Catalog names come from `catalog.items.<id>`. Rooms with no name store an empty label; the default name ("Room"/"Habitación") is shown at render time, so it follows the language. Files are unchanged. Error messages from file validation (`documentFile.ts`) and browser errors are still English. Lint, typecheck and 155 tests pass.
 - Done: 01-scaffold, 02-canvas-camera, 03-document-store, 04-wall-tool, 05-select-edit, 06-rooms, 07-openings, 08-catalog, 09-file-io, 10-ui-polish, 11-3d-preview
 - 11-3d-preview: `src/view3d/`. `model.ts` is pure: it extrudes walls to 2400 mm, splits them around openings (door void with lintel, window void with sill and lintel), and turns items into 900 mm boxes. Plan (x, y) maps to three.js (x, z), and height is y. `Preview3D.tsx` uses React Three Fiber and drei `OrbitControls`. It is loaded with `lazy` and shown when `viewMode === 'model'` (toggle button in the topbar, `src/tools/editor.ts`). It reads the document and never mutates it. Added deps: `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three`. Lint, typecheck, 152 tests and build pass. The 3D view was not checked visually in a browser.
 - Next: none in `specs/phases/`. Ideas for later are in `specs/product.md` (multiple floors, PDF export, takeoffs).

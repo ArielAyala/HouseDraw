@@ -19,7 +19,7 @@ describe('room tool', () => {
     const rooms = detectRooms(doc.walls, doc.labels)
     expect(rooms).toHaveLength(1)
     expect(formatAreaMm2(rooms[0]?.areaMm2 ?? 0)).toBe('20.00 m²')
-    expect(rooms[0]?.name).toBe('Room')
+    expect(rooms[0]?.name).toBe('')
   })
 
   it('works when dragged in any direction', () => {

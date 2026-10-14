@@ -2,6 +2,7 @@ import type { Theme } from '../app/theme'
 import { canvasColorsFromTheme } from '../canvas/colors'
 import { renderPlan } from '../canvas/render'
 import type { PlanDocument } from '../document/types'
+import i18n from '../i18n'
 import { downloadBlob } from './download'
 import { exportBoundsMm, exportSizeFor, fitCameraToBounds } from './exportView'
 
@@ -27,7 +28,10 @@ export async function exportPlanPng(
     throw new Error('Canvas 2D is not available in this browser.')
   }
   ctx.setTransform(EXPORT_PIXEL_RATIO, 0, 0, EXPORT_PIXEL_RATIO, 0, 0)
-  renderPlan(ctx, camera, size, canvasColorsFromTheme(theme), plan)
+  renderPlan(ctx, camera, size, canvasColorsFromTheme(theme), plan, {
+    locale: i18n.language,
+    defaultRoomName: i18n.t('rooms.defaultName'),
+  })
 
   const blob = await canvasToPng(canvas)
   downloadBlob(blob, PLAN_PNG_FILE_NAME)

@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument } from './empty'
-import {
-  DEFAULT_ROOM_NAME,
-  detectRooms,
-  formatAreaMm2,
-  polygonAreaMm2,
-  renameRoom,
-} from './rooms'
+import { detectRooms, formatAreaMm2, polygonAreaMm2, renameRoom } from './rooms'
 import type { PointMm, Wall } from './types'
 
 function loop(points: PointMm[]): Wall[] {
@@ -41,7 +35,7 @@ describe('rooms', () => {
     const rooms = detectRooms(rect)
     expect(rooms).toHaveLength(1)
     expect(formatAreaMm2(rooms[0]?.areaMm2 ?? 0)).toBe('20.00 m²')
-    expect(rooms[0]?.name).toBe(DEFAULT_ROOM_NAME)
+    expect(rooms[0]?.name).toBe('')
   })
 
   it('detects an L-shaped polygon', () => {

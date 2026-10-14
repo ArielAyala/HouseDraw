@@ -17,18 +17,17 @@ export type SymbolShape =
 export type CatalogEntry = {
   id: string
   group: CatalogGroup
-  label: string
   widthMm: number
   heightMm: number
   symbol: SymbolShape[]
 }
 
-export const CATALOG_GROUPS: Array<{ id: CatalogGroup; label: string }> = [
-  { id: 'bathroom', label: 'Bathroom' },
-  { id: 'kitchen', label: 'Kitchen' },
-  { id: 'living', label: 'Living' },
-  { id: 'bedroom', label: 'Bedroom' },
-  { id: 'garden', label: 'Garden' },
+export const CATALOG_GROUPS: CatalogGroup[] = [
+  'bathroom',
+  'kitchen',
+  'living',
+  'bedroom',
+  'garden',
 ]
 
 const FRAME: SymbolShape = { kind: 'rect', x: 0, y: 0, w: 1, h: 1 }
@@ -37,7 +36,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'toilet',
     group: 'bathroom',
-    label: 'Toilet',
     widthMm: 400,
     heightMm: 700,
     symbol: [FRAME, { kind: 'circle', cx: 0.5, cy: 0.62, r: 0.3 }],
@@ -45,7 +43,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'bathroom-sink',
     group: 'bathroom',
-    label: 'Sink',
     widthMm: 600,
     heightMm: 450,
     symbol: [FRAME, { kind: 'circle', cx: 0.5, cy: 0.55, r: 0.26 }],
@@ -53,7 +50,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'shower',
     group: 'bathroom',
-    label: 'Shower',
     widthMm: 800,
     heightMm: 800,
     symbol: [
@@ -65,7 +61,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'bathtub',
     group: 'bathroom',
-    label: 'Bathtub',
     widthMm: 700,
     heightMm: 1700,
     symbol: [
@@ -76,7 +71,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'kitchen-sink',
     group: 'kitchen',
-    label: 'Sink',
     widthMm: 800,
     heightMm: 600,
     symbol: [FRAME, { kind: 'rect', x: 0.1, y: 0.15, w: 0.8, h: 0.7 }],
@@ -84,7 +78,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'stove',
     group: 'kitchen',
-    label: 'Stove',
     widthMm: 600,
     heightMm: 600,
     symbol: [
@@ -98,7 +91,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'fridge',
     group: 'kitchen',
-    label: 'Fridge',
     widthMm: 600,
     heightMm: 650,
     symbol: [FRAME, { kind: 'line', x1: 0, y1: 0.4, x2: 1, y2: 0.4 }],
@@ -106,7 +98,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'counter',
     group: 'kitchen',
-    label: 'Counter',
     widthMm: 1200,
     heightMm: 600,
     symbol: [FRAME],
@@ -114,7 +105,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'sofa',
     group: 'living',
-    label: 'Sofa',
     widthMm: 2000,
     heightMm: 900,
     symbol: [
@@ -126,7 +116,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'table',
     group: 'living',
-    label: 'Table',
     widthMm: 1200,
     heightMm: 800,
     symbol: [FRAME],
@@ -134,7 +123,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'chair',
     group: 'living',
-    label: 'Chair',
     widthMm: 500,
     heightMm: 500,
     symbol: [FRAME, { kind: 'rect', x: 0.1, y: 0.1, w: 0.8, h: 0.25 }],
@@ -142,7 +130,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'tv',
     group: 'living',
-    label: 'TV',
     widthMm: 1200,
     heightMm: 100,
     symbol: [FRAME],
@@ -150,7 +137,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'single-bed',
     group: 'bedroom',
-    label: 'Single bed',
     widthMm: 900,
     heightMm: 2000,
     symbol: [FRAME, { kind: 'rect', x: 0.08, y: 0.04, w: 0.84, h: 0.22 }],
@@ -158,7 +144,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'double-bed',
     group: 'bedroom',
-    label: 'Double bed',
     widthMm: 1600,
     heightMm: 2000,
     symbol: [
@@ -170,7 +155,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'nightstand',
     group: 'bedroom',
-    label: 'Nightstand',
     widthMm: 500,
     heightMm: 400,
     symbol: [FRAME],
@@ -178,7 +162,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'wardrobe',
     group: 'bedroom',
-    label: 'Wardrobe',
     widthMm: 1200,
     heightMm: 600,
     symbol: [FRAME, { kind: 'line', x1: 0.5, y1: 0, x2: 0.5, y2: 1 }],
@@ -186,7 +169,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'grass',
     group: 'garden',
-    label: 'Grass',
     widthMm: 1000,
     heightMm: 1000,
     symbol: [{ kind: 'rect', x: 0, y: 0, w: 1, h: 1, fill: true }],
@@ -194,7 +176,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'tree',
     group: 'garden',
-    label: 'Tree',
     widthMm: 2000,
     heightMm: 2000,
     symbol: [{ kind: 'circle', cx: 0.5, cy: 0.5, r: 0.5, fill: true }],
@@ -202,7 +183,6 @@ export const CATALOG: CatalogEntry[] = [
   {
     id: 'fence',
     group: 'garden',
-    label: 'Fence segment',
     widthMm: 2000,
     heightMm: 100,
     symbol: [FRAME],

@@ -4,6 +4,7 @@ import App from './app/App.tsx'
 import { ThemeProvider } from './app/ThemeProvider.tsx'
 import { useDocumentStore } from './document/store.ts'
 import { readAutosavedDocument } from './file/autosave.ts'
+import i18n from './i18n'
 import './index.css'
 
 const root = document.getElementById('root')
@@ -15,9 +16,7 @@ const autosaved = readAutosavedDocument()
 if (autosaved?.ok) {
   useDocumentStore.getState().replaceDocument(autosaved.document)
 } else if (autosaved) {
-  window.alert(
-    `The autosaved plan could not be restored: ${autosaved.error} It will be replaced by your next edit.`,
-  )
+  window.alert(i18n.t('errors.autosaveRestore', { detail: autosaved.error }))
 }
 
 createRoot(root).render(

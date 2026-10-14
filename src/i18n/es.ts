@@ -1,0 +1,110 @@
+import type { en } from './en'
+
+export const es: typeof en = {
+  app: {
+    name: 'HouseDraw',
+  },
+  theme: {
+    toggle: 'Cambiar tema',
+    toLight: 'Cambiar a modo claro',
+    toDark: 'Cambiar a modo oscuro',
+  },
+  language: {
+    change: 'Cambiar idioma',
+  },
+  view: {
+    show3d: 'Mostrar vista 3D',
+    back2d: 'Volver al plano 2D',
+  },
+  tools: {
+    label: 'Herramientas',
+    pan: 'Mover vista',
+    select: 'Seleccionar',
+    wall: 'Muro',
+    room: 'Habitación',
+    door: 'Puerta',
+    window: 'Ventana',
+    stamp: 'Sello',
+    stampHint: 'Sello (elige un elemento del catálogo)',
+    withShortcut: '{{label}} ({{key}})',
+  },
+  file: {
+    label: 'Archivo',
+    open: 'Abrir plano',
+    openShortcut: 'Abrir plano (Ctrl+O)',
+    save: 'Guardar plano',
+    saveShortcut: 'Guardar plano (Ctrl+S)',
+    export: 'Exportar PNG',
+    confirmReplace:
+      '¿Reemplazar el plano actual con el archivo que vas a abrir?',
+    saveError: 'No se pudo guardar el plano.',
+    openError: 'No se pudo abrir el plano.',
+    exportError: 'No se pudo exportar el PNG.',
+  },
+  inspector: {
+    label: 'Inspector',
+    walls_one: '{{count}} muro',
+    walls_other: '{{count}} muros',
+    deleteHint: 'Suprimir o Retroceso para eliminar',
+    wallTitle: 'Muro',
+    item: 'Elemento',
+    length: 'Longitud',
+    thickness: 'Grosor',
+    itemFallback: 'Elemento',
+    size: 'Tamaño',
+    rotation: 'Rotación',
+    rotate: 'Girar 90°',
+    delete: 'Eliminar',
+    width: 'Ancho',
+  },
+  rooms: {
+    title: 'Habitaciones',
+    name: 'Nombre de la habitación',
+    defaultName: 'Habitación',
+  },
+  catalog: {
+    label: 'Catálogo',
+    title: 'Catálogo',
+    groups: {
+      bathroom: 'Baño',
+      kitchen: 'Cocina',
+      living: 'Sala',
+      bedroom: 'Dormitorio',
+      garden: 'Jardín',
+    },
+    items: {
+      toilet: 'Inodoro',
+      'bathroom-sink': 'Lavabo',
+      shower: 'Ducha',
+      bathtub: 'Bañera',
+      'kitchen-sink': 'Fregadero',
+      stove: 'Cocina',
+      fridge: 'Refrigerador',
+      counter: 'Encimera',
+      sofa: 'Sofá',
+      table: 'Mesa',
+      chair: 'Silla',
+      tv: 'TV',
+      'single-bed': 'Cama individual',
+      'double-bed': 'Cama doble',
+      nightstand: 'Mesita de noche',
+      wardrobe: 'Armario',
+      grass: 'Césped',
+      tree: 'Árbol',
+      fence: 'Tramo de valla',
+    },
+  },
+  canvas: {
+    grid: 'Cuadrícula {{size}}',
+    units: 'Unidades m / cm',
+    emptyTitle: 'Empieza tu plano',
+    emptyWall:
+      'Pulsa W y haz clic para empezar un muro. Haz clic de nuevo para terminarlo.',
+    emptyKeys:
+      'Esc deja de dibujar. Mantén Espacio o pulsa H para mover la vista; usa la rueda para hacer zoom.',
+  },
+  errors: {
+    autosaveRestore:
+      'No se pudo restaurar el plano guardado automáticamente: {{detail}} Se reemplazará con tu próxima edición.',
+  },
+}

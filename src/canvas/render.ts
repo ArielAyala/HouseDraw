@@ -31,6 +31,11 @@ export type CanvasColors = {
   itemFill: string
 }
 
+export type RenderText = {
+  locale: string
+  defaultRoomName: string
+}
+
 export type PlanOverlay = {
   selectedWallIds: string[]
   draft: { a: PointMm; b: PointMm; thicknessMm: number } | null
@@ -49,6 +54,7 @@ export function renderPlan(
   size: Size,
   colors: CanvasColors,
   plan: PlanDocument,
+  copy: RenderText,
   overlay: PlanOverlay = { selectedWallIds: [], draft: null, marquee: null },
 ): void {
   ctx.save()
@@ -147,20 +153,29 @@ export function renderPlan(
       overlay.draft.b,
       overlay.draft.thicknessMm,
       colors,
+      copy,
     )
   } else if (selected.length === 1) {
     const wall = selected[0]
     if (wall) {
-      drawLengthLabel(ctx, camera, wall.a, wall.b, wall.thicknessMm, colors)
+      drawLengthLabel(
+        ctx,
+        camera,
+        wall.a,
+        wall.b,
+        wall.thicknessMm,
+        colors,
+        copy,
+      )
     }
   }
 
   for (const room of rooms) {
-    drawRoomLabel(ctx, camera, room, colors)
+    drawRoomLabel(ctx, camera, room, colors, copy)
   }
 
   if (overlay.roomDraft) {
-    strokeRoomDraft(ctx, camera, overlay.roomDraft, colors)
+    strokeRoomDraft(ctx, camera, overlay.roomDraft, colors, copy)
   }
 
   if (overlay.draft) {
@@ -325,6 +340,7 @@ function drawRoomLabel(
   camera: Camera,
   room: Room,
   colors: CanvasColors,
+  copy: RenderText,
 ): void {
   const at = pointInPolygon(room.centroid, room.polygon)
     ? room.centroid
@@ -335,9 +351,9 @@ function drawRoomLabel(
   ctx.textBaseline = 'middle'
   ctx.fillStyle = colors.labelText
   ctx.font = '600 13px system-ui, "Segoe UI", Roboto, sans-serif'
-  ctx.fillText(room.name, s.x, s.y - 8)
+  ctx.fillText(room.name || copy.defaultRoomName, s.x, s.y - 8)
   ctx.font = '12px system-ui, "Segoe UI", Roboto, sans-serif'
-  ctx.fillText(formatAreaMm2(room.areaMm2), s.x, s.y + 8)
+  ctx.fillText(formatAreaMm2(room.areaMm2, copy.locale), s.x, s.y + 8)
   ctx.restore()
 }
 
@@ -346,6 +362,7 @@ function strokeRoomDraft(
   camera: Camera,
   draft: { a: PointMm; b: PointMm },
   colors: CanvasColors,
+  copy: RenderText,
 ): void {
   const a = worldToScreen(camera, draft.a)
   const b = worldToScreen(camera, draft.b)
@@ -365,7 +382,7 @@ function strokeRoomDraft(
   const w = Math.abs(draft.b.x - draft.a.x)
   const h = Math.abs(draft.b.y - draft.a.y)
   ctx.fillText(
-    `${formatDimensionMm(w)} × ${formatDimensionMm(h)}`,
+    `${formatDimensionMm(w, copy.locale)} × ${formatDimensionMm(h, copy.locale)}`,
     (a.x + b.x) / 2,
     (a.y + b.y) / 2,
   )
@@ -419,6 +436,7 @@ function drawLengthLabel(
   b: PointMm,
   thicknessMm: number,
   colors: CanvasColors,
+  copy: RenderText,
 ): void {
   const length = segmentLengthMm(a, b)
   if (length < 1) {
@@ -440,7 +458,7 @@ function drawLengthLabel(
   const offset = (thicknessMm * camera.scale) / 2 + 14
   const x = (sa.x + sb.x) / 2 + nx * offset
   const y = (sa.y + sb.y) / 2 + ny * offset
-  const text = formatDimensionMm(length)
+  const text = formatDimensionMm(length, copy.locale)
 
   ctx.save()
   ctx.translate(x, y)

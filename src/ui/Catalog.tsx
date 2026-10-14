@@ -1,4 +1,5 @@
 import type { DragEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatDimensionMm } from '../canvas/units'
 import {
   CATALOG,
@@ -10,28 +11,28 @@ import { useEditorStore } from '../tools/editor'
 import styles from './Catalog.module.css'
 
 export default function Catalog() {
+  const { t, i18n } = useTranslation()
   const tool = useEditorStore((state) => state.tool)
   const stampId = useEditorStore((state) => state.stampId)
   const setStampId = useEditorStore((state) => state.setStampId)
 
   return (
-    <aside className={styles.panel} aria-label="Catalog">
-      <h2 className={styles.title}>Catalog</h2>
+    <aside className={styles.panel} aria-label={t('catalog.label')}>
+      <h2 className={styles.title}>{t('catalog.title')}</h2>
       {CATALOG_GROUPS.map((group) => (
-        <section key={group.id} className={styles.group}>
-          <h3 className={styles.groupTitle}>{group.label}</h3>
+        <section key={group} className={styles.group}>
+          <h3 className={styles.groupTitle}>{t(`catalog.groups.${group}`)}</h3>
           <ul className={styles.list}>
-            {CATALOG.filter((entry) => entry.group === group.id).map(
-              (entry) => (
-                <li key={entry.id}>
-                  <CatalogButton
-                    entry={entry}
-                    active={tool === 'stamp' && stampId === entry.id}
-                    onSelect={() => setStampId(entry.id)}
-                  />
-                </li>
-              ),
-            )}
+            {CATALOG.filter((entry) => entry.group === group).map((entry) => (
+              <li key={entry.id}>
+                <CatalogButton
+                  entry={entry}
+                  active={tool === 'stamp' && stampId === entry.id}
+                  locale={i18n.language}
+                  onSelect={() => setStampId(entry.id)}
+                />
+              </li>
+            ))}
           </ul>
         </section>
       ))}
@@ -42,10 +43,14 @@ export default function Catalog() {
 function CatalogButton(props: {
   entry: CatalogEntry
   active: boolean
+  locale: string
   onSelect: () => void
 }) {
-  const { entry, active, onSelect } = props
+  const { entry, active, locale, onSelect } = props
+  const { t } = useTranslation()
   const setStampId = useEditorStore((state) => state.setStampId)
+  const label = t(`catalog.items.${entry.id}`)
+  const size = `${formatDimensionMm(entry.widthMm, locale)} × ${formatDimensionMm(entry.heightMm, locale)}`
   const onDragStart = (event: DragEvent<HTMLButtonElement>) => {
     event.dataTransfer.setData(CATALOG_DRAG_TYPE, entry.id)
     event.dataTransfer.effectAllowed = 'copy'
@@ -59,12 +64,10 @@ function CatalogButton(props: {
       aria-pressed={active}
       onClick={onSelect}
       onDragStart={onDragStart}
-      title={`${entry.label} · ${formatDimensionMm(entry.widthMm)} × ${formatDimensionMm(entry.heightMm)}`}
+      title={`${label} · ${size}`}
     >
-      <span>{entry.label}</span>
-      <span className={styles.size}>
-        {formatDimensionMm(entry.widthMm)} × {formatDimensionMm(entry.heightMm)}
-      </span>
+      <span>{label}</span>
+      <span className={styles.size}>{size}</span>
     </button>
   )
 }

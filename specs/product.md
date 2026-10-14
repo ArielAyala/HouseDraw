@@ -27,7 +27,7 @@ Phases 01–10: scaffold, canvas/camera, document store, walls, select/edit, roo
 - PDF export
 - Material takeoffs
 - Scanned-plan import
-- Spanish UI (V1 copy is English)
+- Spanish UI (English is the default; switch with the EN/ES button in the topbar)
 
 ## Non-goals
 

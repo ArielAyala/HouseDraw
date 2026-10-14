@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '../app/ThemeProvider'
 import { CATALOG_DRAG_TYPE } from '../catalog/catalog'
 import { itemAtPoint, moveItemsById } from '../document/items'
@@ -15,7 +16,6 @@ import { useDocumentStore } from '../document/store'
 import type { PlanDocument } from '../document/types'
 import { moveWallsById } from '../tools/edit'
 import {
-  type EditorTool,
   pruneSelectedItemIds,
   pruneSelectedWallIds,
   useEditorStore,
@@ -50,17 +50,13 @@ type Hover = { wallId: string | null; itemId: string | null }
 
 const NO_HOVER: Hover = { wallId: null, itemId: null }
 
-const TOOL_LABELS: Record<EditorTool, string> = {
-  select: 'Select',
-  pan: 'Pan',
-  wall: 'Wall',
-  room: 'Room',
-  door: 'Door',
-  window: 'Window',
-  stamp: 'Stamp',
-}
-
 export default function PlanCanvas() {
+  const { t, i18n } = useTranslation()
+  const language = i18n.language
+  const canvasText = useMemo(
+    () => ({ locale: language, defaultRoomName: t('rooms.defaultName') }),
+    [language, t],
+  )
   const { theme } = useTheme()
   const plan = useDocumentStore((state) => state.document)
   const tool = useEditorStore((state) => state.tool)
@@ -203,8 +199,16 @@ export default function PlanCanvas() {
     canvas.width = Math.round(width * dpr)
     canvas.height = Math.round(height * dpr)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    renderPlan(ctx, camera, { width, height }, colors, displayPlan, overlay)
-  }, [camera, colors, displayPlan, overlay])
+    renderPlan(
+      ctx,
+      camera,
+      { width, height },
+      colors,
+      displayPlan,
+      canvasText,
+      overlay,
+    )
+  }, [camera, colors, displayPlan, overlay, canvasText])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -432,9 +436,12 @@ export default function PlanCanvas() {
   const preview = wallPreview(wallTool.session)
   const statusLength =
     tool === 'wall' && wallTool.session.start && preview
-      ? formatDimensionMm(distanceMm(wallTool.session.start, preview))
+      ? formatDimensionMm(distanceMm(wallTool.session.start, preview), language)
       : selectedWall
-        ? formatDimensionMm(distanceMm(selectedWall.a, selectedWall.b))
+        ? formatDimensionMm(
+            distanceMm(selectedWall.a, selectedWall.b),
+            language,
+          )
         : null
 
   return (
@@ -457,15 +464,17 @@ export default function PlanCanvas() {
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>Grid {formatLengthMm(gridStep)}</span>
+        <span>
+          {t('canvas.grid', { size: formatLengthMm(gridStep, language) })}
+        </span>
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>Units m / cm</span>
+        <span>{t('canvas.units')}</span>
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>
-        <span>{TOOL_LABELS[tool]}</span>
+        <span>{t(`tools.${tool}`)}</span>
         {statusLength ? (
           <>
             <span className={styles.dot} aria-hidden="true">
@@ -498,11 +507,12 @@ function hoverAt(pointer: ToolPointer, plan: PlanDocument): Hover {
 }
 
 function EmptyState() {
+  const { t } = useTranslation()
   return (
     <div className={styles.empty}>
-      <h2 className={styles.emptyTitle}>Start your plan</h2>
-      <p>Press W, then click to start a wall. Click again to end it.</p>
-      <p>Esc stops drawing. Hold Space or press H to pan, scroll to zoom.</p>
+      <h2 className={styles.emptyTitle}>{t('canvas.emptyTitle')}</h2>
+      <p>{t('canvas.emptyWall')}</p>
+      <p>{t('canvas.emptyKeys')}</p>
     </div>
   )
 }

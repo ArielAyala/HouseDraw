@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatDimensionMm } from '../canvas/units'
 import { findCatalogEntry } from '../catalog/catalog'
 import { deleteItemsById, rotateItemsById } from '../document/items'
@@ -21,6 +22,8 @@ import {
 import styles from './Inspector.module.css'
 
 export default function Inspector() {
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language
   const plan = useDocumentStore((state) => state.document)
   const apply = useDocumentStore((state) => state.apply)
   const tool = useEditorStore((state) => state.tool)
@@ -45,9 +48,9 @@ export default function Inspector() {
       setThicknessInput('')
       return
     }
-    setLengthInput(formatDimensionMm(distanceMm(wall.a, wall.b)))
+    setLengthInput(formatDimensionMm(distanceMm(wall.a, wall.b), locale))
     setThicknessInput(String(wall.thicknessMm))
-  }, [wall])
+  }, [wall, locale])
 
   if (selectedItem) {
     return <ItemPanel item={selectedItem} />
@@ -62,9 +65,11 @@ export default function Inspector() {
 
   if (!wall) {
     return (
-      <aside className={styles.panel} aria-label="Inspector">
-        <h2 className={styles.title}>{selected.length} walls</h2>
-        <p className={styles.hint}>Delete or Backspace to remove</p>
+      <aside className={styles.panel} aria-label={t('inspector.label')}>
+        <h2 className={styles.title}>
+          {t('inspector.walls', { count: selected.length })}
+        </h2>
+        <p className={styles.hint}>{t('inspector.deleteHint')}</p>
       </aside>
     )
   }
@@ -74,12 +79,12 @@ export default function Inspector() {
   const commitLength = () => {
     const mm = parseLengthInput(lengthInput)
     if (mm === null) {
-      setLengthInput(formatDimensionMm(lengthMm))
+      setLengthInput(formatDimensionMm(lengthMm, locale))
       return
     }
     const next = setWallLengthMm(wall, mm)
     if (next === wall) {
-      setLengthInput(formatDimensionMm(lengthMm))
+      setLengthInput(formatDimensionMm(lengthMm, locale))
       return
     }
     apply((document) =>
@@ -121,11 +126,11 @@ export default function Inspector() {
   }
 
   return (
-    <aside className={styles.panel} aria-label="Inspector">
-      <h2 className={styles.title}>Wall</h2>
+    <aside className={styles.panel} aria-label={t('inspector.label')}>
+      <h2 className={styles.title}>{t('inspector.wallTitle')}</h2>
       <form className={styles.field} onSubmit={onLengthSubmit}>
         <label className={styles.label} htmlFor="wall-length">
-          Length
+          {t('inspector.length')}
         </label>
         <input
           id="wall-length"
@@ -138,7 +143,7 @@ export default function Inspector() {
       </form>
       <form className={styles.field} onSubmit={onThicknessSubmit}>
         <label className={styles.label} htmlFor="wall-thickness">
-          Thickness
+          {t('inspector.thickness')}
         </label>
         <input
           id="wall-thickness"
@@ -155,20 +160,25 @@ export default function Inspector() {
 
 function ItemPanel(props: { item: Item }) {
   const { item } = props
+  const { t, i18n } = useTranslation()
   const apply = useDocumentStore((state) => state.apply)
   const clearSelection = useEditorStore((state) => state.clearSelection)
   const entry = findCatalogEntry(item.catalogId)
+  const locale = i18n.language
   return (
-    <aside className={styles.panel} aria-label="Item">
-      <h2 className={styles.title}>{entry?.label ?? 'Item'}</h2>
+    <aside className={styles.panel} aria-label={t('inspector.item')}>
+      <h2 className={styles.title}>
+        {entry ? t(`catalog.items.${entry.id}`) : t('inspector.itemFallback')}
+      </h2>
       <div className={styles.field}>
-        <span className={styles.label}>Size</span>
+        <span className={styles.label}>{t('inspector.size')}</span>
         <span className={styles.meta}>
-          {formatDimensionMm(item.widthMm)} × {formatDimensionMm(item.heightMm)}
+          {formatDimensionMm(item.widthMm, locale)} ×{' '}
+          {formatDimensionMm(item.heightMm, locale)}
         </span>
       </div>
       <div className={styles.field}>
-        <span className={styles.label}>Rotation</span>
+        <span className={styles.label}>{t('inspector.rotation')}</span>
         <span className={styles.meta}>{item.rotationDeg}°</span>
       </div>
       <button
@@ -178,7 +188,7 @@ function ItemPanel(props: { item: Item }) {
           apply((document) => rotateItemsById(document, [item.id]))
         }
       >
-        Rotate 90°
+        {t('inspector.rotate')}
       </button>
       <button
         type="button"
@@ -188,7 +198,7 @@ function ItemPanel(props: { item: Item }) {
           clearSelection()
         }}
       >
-        Delete
+        {t('inspector.delete')}
       </button>
     </aside>
   )
@@ -196,9 +206,10 @@ function ItemPanel(props: { item: Item }) {
 
 function OpeningPanel(props: { kind: OpeningKind }) {
   const { kind } = props
+  const { t } = useTranslation()
   const widthMm = useEditorStore((state) => state.openingWidthMm[kind])
   const setOpeningWidthMm = useEditorStore((state) => state.setOpeningWidthMm)
-  const label = kind === 'door' ? 'Door' : 'Window'
+  const label = t(`tools.${kind}`)
   const [value, setValue] = useState(String(widthMm))
   useEffect(() => setValue(String(widthMm)), [widthMm])
   const commit = () => {
@@ -220,7 +231,7 @@ function OpeningPanel(props: { kind: OpeningKind }) {
         }}
       >
         <label className={styles.label} htmlFor={`${kind}-width`}>
-          Width
+          {t('inspector.width')}
         </label>
         <input
           id={`${kind}-width`}
@@ -236,6 +247,7 @@ function OpeningPanel(props: { kind: OpeningKind }) {
 }
 
 function RoomsPanel() {
+  const { t, i18n } = useTranslation()
   const plan = useDocumentStore((state) => state.document)
   const apply = useDocumentStore((state) => state.apply)
   const rooms = useMemo(
@@ -246,13 +258,14 @@ function RoomsPanel() {
     return null
   }
   return (
-    <aside className={styles.panel} aria-label="Rooms">
-      <h2 className={styles.title}>Rooms</h2>
+    <aside className={styles.panel} aria-label={t('rooms.title')}>
+      <h2 className={styles.title}>{t('rooms.title')}</h2>
       {rooms.map((room) => (
         <RoomRow
           key={room.id}
           name={room.name}
-          area={formatAreaMm2(room.areaMm2)}
+          placeholder={t('rooms.defaultName')}
+          area={formatAreaMm2(room.areaMm2, i18n.language)}
           onRename={(name) =>
             apply((document) =>
               renameRoom(document, room.id, name, crypto.randomUUID()),
@@ -266,10 +279,12 @@ function RoomsPanel() {
 
 function RoomRow(props: {
   name: string
+  placeholder: string
   area: string
   onRename: (name: string) => void
 }) {
-  const { name, area, onRename } = props
+  const { name, placeholder, area, onRename } = props
+  const { t } = useTranslation()
   const [value, setValue] = useState(name)
   useEffect(() => setValue(name), [name])
   const commit = () => {
@@ -290,7 +305,8 @@ function RoomRow(props: {
     >
       <input
         className={styles.input}
-        aria-label="Room name"
+        aria-label={t('rooms.name')}
+        placeholder={placeholder}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onBlur={commit}
