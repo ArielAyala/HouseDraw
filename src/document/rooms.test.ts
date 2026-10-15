@@ -38,6 +38,52 @@ describe('rooms', () => {
     expect(rooms[0]?.name).toBe('')
   })
 
+  it('detects both rooms when two rooms share a wall', () => {
+    const walls: Wall[] = [
+      ...loop([
+        { x: 0, y: 0 },
+        { x: 4000, y: 0 },
+        { x: 4000, y: 3000 },
+        { x: 0, y: 3000 },
+      ]),
+      ...loop([
+        { x: 4000, y: 0 },
+        { x: 8000, y: 0 },
+        { x: 8000, y: 3000 },
+        { x: 4000, y: 3000 },
+      ]).map((w) => ({ ...w, id: `b${w.id}` })),
+    ]
+    const rooms = detectRooms(walls)
+    expect(rooms).toHaveLength(2)
+    expect(rooms.map((r) => formatAreaMm2(r.areaMm2)).sort()).toEqual([
+      '12.00 m²',
+      '12.00 m²',
+    ])
+  })
+
+  it('detects both rooms when a shared wall ends mid-edge (T-junction)', () => {
+    const walls: Wall[] = [
+      ...loop([
+        { x: 0, y: 0 },
+        { x: 4000, y: 0 },
+        { x: 4000, y: 3000 },
+        { x: 0, y: 3000 },
+      ]),
+      ...loop([
+        { x: 4000, y: 0 },
+        { x: 8000, y: 0 },
+        { x: 8000, y: 2000 },
+        { x: 4000, y: 2000 },
+      ]).map((w) => ({ ...w, id: `b${w.id}` })),
+    ]
+    const rooms = detectRooms(walls)
+    expect(rooms).toHaveLength(2)
+    expect(rooms.map((r) => formatAreaMm2(r.areaMm2)).sort()).toEqual([
+      '12.00 m²',
+      '8.00 m²',
+    ])
+  })
+
   it('detects an L-shaped polygon', () => {
     const rooms = detectRooms(
       loop([

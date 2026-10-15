@@ -13,12 +13,21 @@ export type Room = {
   labelId: string | null
 }
 
+type PlanarSegment = {
+  a: PointMm
+  b: PointMm
+  wallIds: string[]
+}
+
 type HalfEdge = {
   from: string
   to: string
-  wallId: string
+  segment: number
   angle: number
 }
+
+/** Max distance (mm) for a wall endpoint to count as lying on another wall. */
+const ON_WALL_TOLERANCE_MM = 0.5
 
 const key = (p: PointMm): string => `${p.x},${p.y}`
 
@@ -91,18 +100,84 @@ export function formatAreaMm2(areaMm2: number, locale = 'en'): string {
  * Bounded faces of the planar graph formed by walls (joined at shared
  * endpoints). Area uses wall centerlines.
  */
+/**
+ * Returns the position of `p` along segment `a→b` in [0, 1] when `p` lies on
+ * it (within tolerance), otherwise null.
+ */
+function projectOnSegment(p: PointMm, a: PointMm, b: PointMm): number | null {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lengthSq = dx * dx + dy * dy
+  const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq
+  if (t < 0 || t > 1) {
+    return null
+  }
+  const distance =
+    Math.abs((p.x - a.x) * dy - (p.y - a.y) * dx) / Math.sqrt(lengthSq)
+  return distance <= ON_WALL_TOLERANCE_MM ? t : null
+}
+
+/**
+ * Splits walls wherever another wall endpoint touches them (T-junctions) and
+ * merges coincident pieces. Two rooms that share an edge then share one
+ * planar edge instead of two overlapping walls, which would break face tracing.
+ */
+function planarSegments(walls: readonly Wall[]): PlanarSegment[] {
+  const endpoints = new Map<string, PointMm>()
+  for (const wall of walls) {
+    if (wall.a.x === wall.b.x && wall.a.y === wall.b.y) {
+      continue
+    }
+    endpoints.set(key(wall.a), wall.a)
+    endpoints.set(key(wall.b), wall.b)
+  }
+
+  const merged = new Map<string, PlanarSegment>()
+  for (const wall of walls) {
+    if (wall.a.x === wall.b.x && wall.a.y === wall.b.y) {
+      continue
+    }
+    const chain = [...endpoints.values()]
+      .map((p) => ({ p, t: projectOnSegment(p, wall.a, wall.b) }))
+      .filter((item): item is { p: PointMm; t: number } => item.t !== null)
+      .sort((p, q) => p.t - q.t)
+      .map((item) => item.p)
+
+    for (let i = 0; i + 1 < chain.length; i++) {
+      const a = chain[i]
+      const b = chain[i + 1]
+      if (!a || !b) {
+        continue
+      }
+      const ka = key(a)
+      const kb = key(b)
+      const id = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`
+      const existing = merged.get(id)
+      if (existing) {
+        if (!existing.wallIds.includes(wall.id)) {
+          existing.wallIds.push(wall.id)
+        }
+      } else {
+        merged.set(id, { a, b, wallIds: [wall.id] })
+      }
+    }
+  }
+  return [...merged.values()]
+}
+
 export function detectRooms(
   walls: readonly Wall[],
   labels: readonly Label[] = [],
 ): Room[] {
+  const segments = planarSegments(walls)
   const points = new Map<string, PointMm>()
   const outgoing = new Map<string, HalfEdge[]>()
 
-  const addHalf = (from: PointMm, to: PointMm, wallId: string) => {
+  const addHalf = (from: PointMm, to: PointMm, segment: number) => {
     const edge: HalfEdge = {
       from: key(from),
       to: key(to),
-      wallId,
+      segment,
       angle: Math.atan2(to.y - from.y, to.x - from.x),
     }
     const list = outgoing.get(edge.from) ?? []
@@ -110,15 +185,12 @@ export function detectRooms(
     outgoing.set(edge.from, list)
   }
 
-  for (const wall of walls) {
-    if (wall.a.x === wall.b.x && wall.a.y === wall.b.y) {
-      continue
-    }
-    points.set(key(wall.a), wall.a)
-    points.set(key(wall.b), wall.b)
-    addHalf(wall.a, wall.b, wall.id)
-    addHalf(wall.b, wall.a, wall.id)
-  }
+  segments.forEach((segment, index) => {
+    points.set(key(segment.a), segment.a)
+    points.set(key(segment.b), segment.b)
+    addHalf(segment.a, segment.b, index)
+    addHalf(segment.b, segment.a, index)
+  })
   for (const list of outgoing.values()) {
     list.sort((p, q) => p.angle - q.angle)
   }
@@ -139,7 +211,7 @@ export function detectRooms(
         const edge: HalfEdge = current
         const atEnd: HalfEdge[] = outgoing.get(edge.to) ?? []
         const twinIndex: number = atEnd.findIndex(
-          (e) => e.to === edge.from && e.wallId === edge.wallId,
+          (e) => e.to === edge.from && e.segment === edge.segment,
         )
         if (twinIndex < 0) {
           break
@@ -152,7 +224,8 @@ export function detectRooms(
       if (polygon.length < 3 || polygonAreaMm2(polygon) <= 0) {
         continue
       }
-      rooms.push(buildRoom(polygon, face, labels))
+      const wallIds = face.flatMap((e) => segments[e.segment]?.wallIds ?? [])
+      rooms.push(buildRoom(polygon, wallIds, labels))
     }
   }
 
@@ -161,10 +234,10 @@ export function detectRooms(
 
 function buildRoom(
   polygon: PointMm[],
-  face: HalfEdge[],
+  wallIdsInFace: readonly string[],
   labels: readonly Label[],
 ): Room {
-  const wallIds = [...new Set(face.map((e) => e.wallId))].sort()
+  const wallIds = [...new Set(wallIdsInFace)].sort()
   const centroid = polygonCentroid(polygon)
   const label = labels.find((l) => pointInPolygon(l, polygon))
   return {
