@@ -26,6 +26,7 @@ export const es: typeof en = {
     window: 'Ventana',
     stamp: 'Sello',
     stampHint: 'Sello (elige un elemento del catálogo)',
+    moveToolbar: 'Arrastra para mover la barra',
     withShortcut: '{{label}} ({{key}})',
   },
   file: {

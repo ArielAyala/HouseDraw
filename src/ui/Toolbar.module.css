@@ -14,6 +14,36 @@
   z-index: 2;
 }
 
+.horizontal {
+  flex-direction: row;
+}
+
+.grip,
+.gripHorizontal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  color: var(--hd-text-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.gripHorizontal {
+  width: 16px;
+  height: 32px;
+}
+
+.dragging,
+.dragging .grip,
+.dragging .gripHorizontal {
+  cursor: grabbing;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

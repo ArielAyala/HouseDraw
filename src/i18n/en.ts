@@ -24,6 +24,7 @@ export const en = {
     window: 'Window',
     stamp: 'Stamp',
     stampHint: 'Stamp (pick an item from the catalog)',
+    moveToolbar: 'Drag to move the toolbar',
     withShortcut: '{{label}} ({{key}})',
   },
   file: {
