@@ -54,11 +54,13 @@ export const en = {
     rotate: 'Rotate 90°',
     delete: 'Delete',
     width: 'Width',
+    showDimension: 'Show wall length',
   },
   rooms: {
     title: 'Rooms',
     name: 'Room name',
     defaultName: 'Room',
+    showDimensions: 'Show wall lengths',
   },
   catalog: {
     label: 'Catalog',
@@ -95,6 +97,7 @@ export const en = {
   canvas: {
     grid: 'Grid {{size}}',
     units: 'Units m / cm',
+    dimensions: 'Dimensions',
     emptyTitle: 'Start your plan',
     emptyWall: 'Press W, then click to start a wall. Click again to end it.',
     emptyKeys:

@@ -21,6 +21,9 @@ export type EditorStore = {
   selectedItemIds: string[]
   stampId: string | null
   openingWidthMm: Record<OpeningKind, number>
+  showAllDimensions: boolean
+  dimensionWallIds: string[]
+  dimensionRoomIds: string[]
   setTool: (tool: EditorTool) => void
   setViewMode: (mode: ViewMode) => void
   setStampId: (catalogId: string | null) => void
@@ -32,6 +35,9 @@ export type EditorStore = {
   selectItem: (id: string | null) => void
   toggleItem: (id: string) => void
   clearSelection: () => void
+  toggleAllDimensions: () => void
+  toggleWallDimension: (id: string) => void
+  toggleRoomDimension: (id: string) => void
 }
 
 export const useEditorStore = create<EditorStore>((set) => ({
@@ -41,6 +47,9 @@ export const useEditorStore = create<EditorStore>((set) => ({
   selectedItemIds: [],
   stampId: null,
   openingWidthMm: { ...DEFAULT_OPENING_WIDTH_MM },
+  showAllDimensions: false,
+  dimensionWallIds: [],
+  dimensionRoomIds: [],
   setTool: (tool) => set({ tool }),
   setViewMode: (viewMode) => set({ viewMode }),
   setStampId: (catalogId) => set({ stampId: catalogId, tool: 'stamp' }),
@@ -71,10 +80,24 @@ export const useEditorStore = create<EditorStore>((set) => ({
       selectedWallIds: [],
     })),
   clearSelection: () => set({ selectedWallIds: [], selectedItemIds: [] }),
+  toggleAllDimensions: () =>
+    set((state) => ({ showAllDimensions: !state.showAllDimensions })),
+  toggleWallDimension: (id) =>
+    set((state) => ({
+      dimensionWallIds: toggleId(state.dimensionWallIds, id),
+    })),
+  toggleRoomDimension: (id) =>
+    set((state) => ({
+      dimensionRoomIds: toggleId(state.dimensionRoomIds, id),
+    })),
 }))
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids)]
+}
+
+function toggleId(ids: string[], id: string): string[] {
+  return ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]
 }
 
 export function pruneSelectedWallIds(

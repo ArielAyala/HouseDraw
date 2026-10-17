@@ -64,6 +64,12 @@ export default function PlanCanvas() {
   const selectedItemIds = useEditorStore((state) => state.selectedItemIds)
   const setSelectedWallIds = useEditorStore((state) => state.setSelectedWallIds)
   const setSelectedItemIds = useEditorStore((state) => state.setSelectedItemIds)
+  const showAllDimensions = useEditorStore((state) => state.showAllDimensions)
+  const dimensionWallIds = useEditorStore((state) => state.dimensionWallIds)
+  const dimensionRoomIds = useEditorStore((state) => state.dimensionRoomIds)
+  const toggleAllDimensions = useEditorStore(
+    (state) => state.toggleAllDimensions,
+  )
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cameraRef = useRef<Camera>(createCamera({ width: 0, height: 0 }))
@@ -167,8 +173,16 @@ export default function PlanCanvas() {
       itemPreview: tool === 'stamp' ? stampTool.preview : null,
       hoverWallId: tool === 'select' ? hover.wallId : null,
       hoverItemId: tool === 'select' ? hover.itemId : null,
+      dimensions: {
+        showAll: showAllDimensions,
+        wallIds: dimensionWallIds,
+        roomIds: dimensionRoomIds,
+      },
     }
   }, [
+    dimensionRoomIds,
+    dimensionWallIds,
+    showAllDimensions,
     openingKind,
     openingTool.preview,
     plan.settings.wallThicknessMm,
@@ -471,6 +485,17 @@ export default function PlanCanvas() {
           ·
         </span>
         <span>{t('canvas.units')}</span>
+        <span className={styles.dot} aria-hidden="true">
+          ·
+        </span>
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-pressed={showAllDimensions}
+          onClick={toggleAllDimensions}
+        >
+          {t('canvas.dimensions')}
+        </button>
         <span className={styles.dot} aria-hidden="true">
           ·
         </span>

@@ -57,11 +57,13 @@ export const es: typeof en = {
     rotate: 'Girar 90°',
     delete: 'Eliminar',
     width: 'Ancho',
+    showDimension: 'Mostrar longitud del muro',
   },
   rooms: {
     title: 'Habitaciones',
     name: 'Nombre de la habitación',
     defaultName: 'Habitación',
+    showDimensions: 'Mostrar longitudes de muros',
   },
   catalog: {
     label: 'Catálogo',
@@ -98,6 +100,7 @@ export const es: typeof en = {
   canvas: {
     grid: 'Cuadrícula {{size}}',
     units: 'Unidades m / cm',
+    dimensions: 'Cotas',
     emptyTitle: 'Empieza tu plano',
     emptyWall:
       'Pulsa W y haz clic para empezar un muro. Haz clic de nuevo para terminarlo.',

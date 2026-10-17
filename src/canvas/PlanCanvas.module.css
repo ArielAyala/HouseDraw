@@ -75,3 +75,24 @@
 .dot {
   opacity: 0.6;
 }
+
+.toggle {
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.toggle[aria-pressed="true"] {
+  color: var(--hd-accent);
+  border-color: var(--hd-accent);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: 1px;
+}

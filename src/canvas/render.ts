@@ -10,6 +10,11 @@ import type { Opening, PlanDocument, PointMm, Wall } from '../document/types'
 import type { OpeningDraft } from '../tools/opening'
 import type { Marquee } from '../tools/select'
 import { type Camera, type Size, visibleWorld, worldToScreen } from './camera'
+import {
+  type DimensionVisibility,
+  NO_DIMENSIONS,
+  visibleDimensionWallIds,
+} from './dimensions'
 import { gridLines, isMajorLine, planGrid } from './grid'
 import { drawItem } from './itemRender'
 import { formatDimensionMm } from './units'
@@ -46,6 +51,7 @@ export type PlanOverlay = {
   itemPreview?: ItemDraft | null
   hoverWallId?: string | null
   hoverItemId?: string | null
+  dimensions?: DimensionVisibility
 }
 
 export function renderPlan(
@@ -155,9 +161,18 @@ export function renderPlan(
       colors,
       copy,
     )
-  } else if (selected.length === 1) {
-    const wall = selected[0]
-    if (wall) {
+  }
+
+  const labeledWallIds = visibleDimensionWallIds(
+    plan.walls,
+    rooms,
+    overlay.dimensions ?? NO_DIMENSIONS,
+  )
+  if (selected.length === 1 && selected[0]) {
+    labeledWallIds.add(selected[0].id)
+  }
+  for (const wall of plan.walls) {
+    if (labeledWallIds.has(wall.id)) {
       drawLengthLabel(
         ctx,
         camera,

@@ -39,6 +39,12 @@ export default function Inspector() {
       ? plan.items.find((item) => item.id === selectedItemIds[0])
       : undefined
 
+  const showAllDimensions = useEditorStore((state) => state.showAllDimensions)
+  const dimensionWallIds = useEditorStore((state) => state.dimensionWallIds)
+  const toggleWallDimension = useEditorStore(
+    (state) => state.toggleWallDimension,
+  )
+
   const [lengthInput, setLengthInput] = useState('')
   const [thicknessInput, setThicknessInput] = useState('')
 
@@ -154,6 +160,15 @@ export default function Inspector() {
         />
         <span className={styles.meta}>cm</span>
       </form>
+      <label className={styles.check}>
+        <input
+          type="checkbox"
+          checked={showAllDimensions || dimensionWallIds.includes(wall.id)}
+          disabled={showAllDimensions}
+          onChange={() => toggleWallDimension(wall.id)}
+        />
+        {t('inspector.showDimension')}
+      </label>
     </aside>
   )
 }
@@ -250,6 +265,11 @@ function RoomsPanel() {
   const { t, i18n } = useTranslation()
   const plan = useDocumentStore((state) => state.document)
   const apply = useDocumentStore((state) => state.apply)
+  const showAllDimensions = useEditorStore((state) => state.showAllDimensions)
+  const dimensionRoomIds = useEditorStore((state) => state.dimensionRoomIds)
+  const toggleRoomDimension = useEditorStore(
+    (state) => state.toggleRoomDimension,
+  )
   const rooms = useMemo(
     () => detectRooms(plan.walls, plan.labels),
     [plan.walls, plan.labels],
@@ -266,6 +286,11 @@ function RoomsPanel() {
           name={room.name}
           placeholder={t('rooms.defaultName')}
           area={formatAreaMm2(room.areaMm2, i18n.language)}
+          dimensionShown={
+            showAllDimensions || dimensionRoomIds.includes(room.id)
+          }
+          dimensionDisabled={showAllDimensions}
+          onToggleDimension={() => toggleRoomDimension(room.id)}
           onRename={(name) =>
             apply((document) =>
               renameRoom(document, room.id, name, crypto.randomUUID()),
@@ -281,9 +306,20 @@ function RoomRow(props: {
   name: string
   placeholder: string
   area: string
+  dimensionShown: boolean
+  dimensionDisabled: boolean
+  onToggleDimension: () => void
   onRename: (name: string) => void
 }) {
-  const { name, placeholder, area, onRename } = props
+  const {
+    name,
+    placeholder,
+    area,
+    dimensionShown,
+    dimensionDisabled,
+    onToggleDimension,
+    onRename,
+  } = props
   const { t } = useTranslation()
   const [value, setValue] = useState(name)
   useEffect(() => setValue(name), [name])
@@ -312,6 +348,15 @@ function RoomRow(props: {
         onBlur={commit}
       />
       <span className={styles.meta}>{area}</span>
+      <label className={styles.check}>
+        <input
+          type="checkbox"
+          checked={dimensionShown}
+          disabled={dimensionDisabled}
+          onChange={onToggleDimension}
+        />
+        {t('rooms.showDimensions')}
+      </label>
     </form>
   )
 }
