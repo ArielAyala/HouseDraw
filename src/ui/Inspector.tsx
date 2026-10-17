@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatDimensionMm } from '../canvas/units'
+import { formatCmValueMm, formatDimensionMm } from '../canvas/units'
 import { findCatalogEntry } from '../catalog/catalog'
 import { deleteItemsById, rotateItemsById } from '../document/items'
 import { fitOpeningsToWall } from '../document/openings'
@@ -49,7 +49,7 @@ export default function Inspector() {
       return
     }
     setLengthInput(formatDimensionMm(distanceMm(wall.a, wall.b), locale))
-    setThicknessInput(String(wall.thicknessMm))
+    setThicknessInput(formatCmValueMm(wall.thicknessMm, locale))
   }, [wall, locale])
 
   if (selectedItem) {
@@ -100,12 +100,12 @@ export default function Inspector() {
   const commitThickness = () => {
     const mm = parseThicknessInput(thicknessInput)
     if (mm === null) {
-      setThicknessInput(String(wall.thicknessMm))
+      setThicknessInput(formatCmValueMm(wall.thicknessMm, locale))
       return
     }
     const next = setWallThicknessMm(wall, mm)
     if (next === wall) {
-      setThicknessInput(String(wall.thicknessMm))
+      setThicknessInput(formatCmValueMm(wall.thicknessMm, locale))
       return
     }
     apply((document) =>
@@ -152,7 +152,7 @@ export default function Inspector() {
           onChange={(event) => setThicknessInput(event.target.value)}
           onBlur={commitThickness}
         />
-        <span className={styles.meta}>mm</span>
+        <span className={styles.meta}>cm</span>
       </form>
     </aside>
   )

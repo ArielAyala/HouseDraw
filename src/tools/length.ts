@@ -11,7 +11,7 @@ function toMillimeters(value: number, unit: string): number {
 }
 
 function parseMeasuredInput(input: string, defaultUnit: string): number | null {
-  const trimmed = input.trim()
+  const trimmed = input.trim().replace(',', '.')
   if (!trimmed) {
     return null
   }
@@ -43,9 +43,9 @@ export function parseLengthInput(input: string): number | null {
   return parseMeasuredInput(input, 'm')
 }
 
-/** Parse wall thickness. Bare numbers are millimeters. */
+/** Parse wall thickness. Bare numbers are centimeters. */
 export function parseThicknessInput(input: string): number | null {
-  return parseMeasuredInput(input, 'mm')
+  return parseMeasuredInput(input, 'cm')
 }
 
 /** Parse opening width. Bare numbers are millimeters. */

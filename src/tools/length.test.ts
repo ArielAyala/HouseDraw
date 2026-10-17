@@ -29,13 +29,20 @@ describe('parseLengthInput', () => {
 })
 
 describe('parseThicknessInput', () => {
-  it('treats bare numbers as millimeters', () => {
-    expect(parseThicknessInput('150')).toBe(150)
-    expect(parseThicknessInput('200mm')).toBe(200)
+  it('treats bare numbers as centimeters', () => {
+    expect(parseThicknessInput('15')).toBe(150)
+    expect(parseThicknessInput('12.5')).toBe(125)
+    expect(parseThicknessInput('12,5')).toBe(125)
   })
 
-  it('parses explicit meters and centimeters', () => {
+  it('parses explicit millimeters and meters', () => {
+    expect(parseThicknessInput('200mm')).toBe(200)
     expect(parseThicknessInput('0.15m')).toBe(150)
-    expect(parseThicknessInput('15cm')).toBe(150)
+    expect(parseThicknessInput('15 cm')).toBe(150)
+  })
+
+  it('rounds to whole millimeters', () => {
+    expect(parseThicknessInput('12.54')).toBe(125)
+    expect(parseThicknessInput('0.04')).toBeNull()
   })
 })

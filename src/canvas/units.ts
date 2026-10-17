@@ -15,6 +15,11 @@ export function formatDimensionMm(mm: number, locale = 'en'): string {
   return `${formatNumber(mm / 10, locale)} cm`
 }
 
+/** Thickness value in centimeters without unit, e.g. `15` or `12.5`. */
+export function formatCmValueMm(mm: number, locale = 'en'): string {
+  return formatNumber(mm / 10, locale)
+}
+
 export function formatZoomPercent(percent: number): string {
   return `${Math.round(percent)}%`
 }
